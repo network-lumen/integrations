@@ -1,0 +1,67 @@
+name: npm SDK Guard
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  sdk:
+    name: Lint & Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: npm/sdk/package-lock.json
+
+      - name: Install npm dependencies
+        working-directory: npm/sdk
+        run: npm ci
+
+      - name: Type check & lint
+        working-directory: npm/sdk
+        run: npm run lint
+
+      - name: Unit tests
+        working-directory: npm/sdk
+        run: npm run test
+
+  docker-e2e:
+    name: Docker smoke & functional suite
+    needs: sdk
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: npm/sdk/package-lock.json
+
+      - name: Install npm dependencies
+        working-directory: npm/sdk
+        run: npm ci
+
+      - name: Docker end-to-end suite
+        working-directory: npm/sdk
+        env:
+          KEEP_CONTAINER: "0"
+        run: npm run test:docker

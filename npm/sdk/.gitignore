@@ -1,0 +1,9 @@
+node_modules
+dist
+.tsbuildinfo
+src/types/**/*.tsbuildinfo
+coverage
+.vscode
+*.log
+../artifacts/docker-node/
+../artifacts/bin-cache/

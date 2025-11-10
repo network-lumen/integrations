@@ -1,0 +1,9 @@
+export const PQC_PREFIX = "PQCv1:";
+export const PQC_TYPE_URL = "/lumen.pqc.v1.PQCSignatures";
+export const PQC_STORE_DIRNAME = "pqc_keys";
+export const PQC_KEYS_FILE = "keys.json";
+export const PQC_LINKS_FILE = "links.json";
+export const DEFAULT_SCHEME = "dilithium3";
+export const DILITHIUM3_PUBLIC_KEY_BYTES = 1952;
+export const DILITHIUM3_PRIVATE_KEY_BYTES = 4000;
+export const DILITHIUM3_SIGNATURE_BYTES = 3293;
