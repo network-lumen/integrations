@@ -8,7 +8,7 @@ import { joinRest, withQuery } from "../src/rest.js";
 import type { Release } from "../src/types/lumen/release/v1/types.js";
 import { Release_ReleaseStatus } from "../src/types/lumen/release/v1/types.js";
 
-const REST = "http://localhost:1317";
+const REST = "http://localhost:2327";
 
 function setupFetchMock(payload: any = {}) {
   const mock = vi.fn(async () => new Response(JSON.stringify(payload), { status: 200 }));
@@ -44,7 +44,7 @@ describe("DnsModule", () => {
   it("resolve builds encoded path", async () => {
     await module.resolve("foo", "bar");
     expect(fetchMock).toHaveBeenCalledWith(
-      "http://localhost:1317/lumen/dns/v1/resolve/foo/bar/-/0/-",
+      "http://localhost:2327/lumen/dns/v1/resolve/foo/bar/-/0/-",
       expect.any(Object),
     );
   });
@@ -52,7 +52,7 @@ describe("DnsModule", () => {
   it("domains adds query params", async () => {
     await module.domains({ pageKey: "abc", limit: 5 });
     expect(fetchMock).toHaveBeenCalledWith(
-      "http://localhost:1317/lumen/dns/v1/domain?pagination.key=abc&pagination.limit=5",
+      "http://localhost:2327/lumen/dns/v1/domain?pagination.key=abc&pagination.limit=5",
       expect.any(Object),
     );
   });
@@ -93,7 +93,7 @@ describe("GatewaysModule", () => {
   it("gateways query", async () => {
     await module.gateways({ offset: 1, limit: 2 });
     expect(fetchMock).toHaveBeenCalledWith(
-      "http://localhost:1317/lumen/gateway/v1/gateways?offset=1&limit=2",
+      "http://localhost:2327/lumen/gateway/v1/gateways?offset=1&limit=2",
       expect.any(Object),
     );
   });
@@ -127,7 +127,7 @@ describe("ReleasesModule", () => {
   it("latest endpoint", async () => {
     await module.latest();
     expect(fetchMock).toHaveBeenCalledWith(
-      "http://localhost:1317/lumen/release/latest",
+      "http://localhost:2327/lumen/release/latest",
       expect.any(Object),
     );
   });
@@ -158,7 +158,7 @@ describe("TokenomicsModule", () => {
     const fetchMock = setupFetchMock({ params: {} });
     await module.params();
     expect(fetchMock).toHaveBeenCalledWith(
-      "http://localhost:1317/lumen/tokenomics/v1/params",
+      "http://localhost:2327/lumen/tokenomics/v1/params",
       expect.any(Object),
     );
   });

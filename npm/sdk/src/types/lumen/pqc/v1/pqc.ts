@@ -12,7 +12,7 @@ export const protobufPackage = "lumen.pqc.v1";
 export interface AccountPQC {
   addr: string;
   scheme: string;
-  pubKey: Uint8Array;
+  pubKeyHash: Uint8Array;
   addedAt: number;
 }
 
@@ -20,6 +20,7 @@ export interface PQCSignatureEntry {
   addr: string;
   scheme: string;
   signature: Uint8Array;
+  pubKey: Uint8Array;
 }
 
 export interface PQCSignatures {
@@ -27,7 +28,7 @@ export interface PQCSignatures {
 }
 
 function createBaseAccountPQC(): AccountPQC {
-  return { addr: "", scheme: "", pubKey: new Uint8Array(0), addedAt: 0 };
+  return { addr: "", scheme: "", pubKeyHash: new Uint8Array(0), addedAt: 0 };
 }
 
 export const AccountPQC: MessageFns<AccountPQC> = {
@@ -38,8 +39,8 @@ export const AccountPQC: MessageFns<AccountPQC> = {
     if (message.scheme !== "") {
       writer.uint32(18).string(message.scheme);
     }
-    if (message.pubKey.length !== 0) {
-      writer.uint32(26).bytes(message.pubKey);
+    if (message.pubKeyHash.length !== 0) {
+      writer.uint32(26).bytes(message.pubKeyHash);
     }
     if (message.addedAt !== 0) {
       writer.uint32(32).int64(message.addedAt);
@@ -75,7 +76,7 @@ export const AccountPQC: MessageFns<AccountPQC> = {
             break;
           }
 
-          message.pubKey = reader.bytes();
+          message.pubKeyHash = reader.bytes();
           continue;
         }
         case 4: {
@@ -99,7 +100,7 @@ export const AccountPQC: MessageFns<AccountPQC> = {
     return {
       addr: isSet(object.addr) ? globalThis.String(object.addr) : "",
       scheme: isSet(object.scheme) ? globalThis.String(object.scheme) : "",
-      pubKey: isSet(object.pubKey) ? bytesFromBase64(object.pubKey) : new Uint8Array(0),
+      pubKeyHash: isSet(object.pubKeyHash) ? bytesFromBase64(object.pubKeyHash) : new Uint8Array(0),
       addedAt: isSet(object.addedAt) ? globalThis.Number(object.addedAt) : 0,
     };
   },
@@ -112,8 +113,8 @@ export const AccountPQC: MessageFns<AccountPQC> = {
     if (message.scheme !== "") {
       obj.scheme = message.scheme;
     }
-    if (message.pubKey.length !== 0) {
-      obj.pubKey = base64FromBytes(message.pubKey);
+    if (message.pubKeyHash.length !== 0) {
+      obj.pubKeyHash = base64FromBytes(message.pubKeyHash);
     }
     if (message.addedAt !== 0) {
       obj.addedAt = Math.round(message.addedAt);
@@ -128,14 +129,14 @@ export const AccountPQC: MessageFns<AccountPQC> = {
     const message = createBaseAccountPQC();
     message.addr = object.addr ?? "";
     message.scheme = object.scheme ?? "";
-    message.pubKey = object.pubKey ?? new Uint8Array(0);
+    message.pubKeyHash = object.pubKeyHash ?? new Uint8Array(0);
     message.addedAt = object.addedAt ?? 0;
     return message;
   },
 };
 
 function createBasePQCSignatureEntry(): PQCSignatureEntry {
-  return { addr: "", scheme: "", signature: new Uint8Array(0) };
+  return { addr: "", scheme: "", signature: new Uint8Array(0), pubKey: new Uint8Array(0) };
 }
 
 export const PQCSignatureEntry: MessageFns<PQCSignatureEntry> = {
@@ -148,6 +149,9 @@ export const PQCSignatureEntry: MessageFns<PQCSignatureEntry> = {
     }
     if (message.signature.length !== 0) {
       writer.uint32(26).bytes(message.signature);
+    }
+    if (message.pubKey.length !== 0) {
+      writer.uint32(34).bytes(message.pubKey);
     }
     return writer;
   },
@@ -183,6 +187,14 @@ export const PQCSignatureEntry: MessageFns<PQCSignatureEntry> = {
           message.signature = reader.bytes();
           continue;
         }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.pubKey = reader.bytes();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -197,6 +209,7 @@ export const PQCSignatureEntry: MessageFns<PQCSignatureEntry> = {
       addr: isSet(object.addr) ? globalThis.String(object.addr) : "",
       scheme: isSet(object.scheme) ? globalThis.String(object.scheme) : "",
       signature: isSet(object.signature) ? bytesFromBase64(object.signature) : new Uint8Array(0),
+      pubKey: isSet(object.pubKey) ? bytesFromBase64(object.pubKey) : new Uint8Array(0),
     };
   },
 
@@ -211,6 +224,9 @@ export const PQCSignatureEntry: MessageFns<PQCSignatureEntry> = {
     if (message.signature.length !== 0) {
       obj.signature = base64FromBytes(message.signature);
     }
+    if (message.pubKey.length !== 0) {
+      obj.pubKey = base64FromBytes(message.pubKey);
+    }
     return obj;
   },
 
@@ -222,6 +238,7 @@ export const PQCSignatureEntry: MessageFns<PQCSignatureEntry> = {
     message.addr = object.addr ?? "";
     message.scheme = object.scheme ?? "";
     message.signature = object.signature ?? new Uint8Array(0);
+    message.pubKey = object.pubKey ?? new Uint8Array(0);
     return message;
   },
 };

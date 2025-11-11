@@ -173,6 +173,7 @@ export class LumenSigningClient extends LumenClient {
       addr: signerAddress,
       scheme,
       signature,
+      pubKey: key.publicKey,
     }];
   }
 
@@ -252,5 +253,7 @@ function parseParams(input: any): PqcParams | undefined {
     policy,
     minScheme: input.minScheme ?? input.min_scheme ?? "",
     allowAccountRotate: Boolean(input.allowAccountRotate ?? input.allow_account_rotate ?? false),
+    minBalanceForLink: input.minBalanceForLink ?? input.min_balance_for_link,
+    powDifficultyBits: Number(input.powDifficultyBits ?? input.pow_difficulty_bits ?? 0),
   };
 }

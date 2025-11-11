@@ -6,6 +6,7 @@
 
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
+import { Coin } from "../../../cosmos/base/v1beta1/coin";
 
 export const protobufPackage = "lumen.pqc.v1";
 
@@ -52,10 +53,12 @@ export interface Params {
   policy: PqcPolicy;
   minScheme: string;
   allowAccountRotate: boolean;
+  minBalanceForLink: Coin | undefined;
+  powDifficultyBits: number;
 }
 
 function createBaseParams(): Params {
-  return { policy: 0, minScheme: "", allowAccountRotate: false };
+  return { policy: 0, minScheme: "", allowAccountRotate: false, minBalanceForLink: undefined, powDifficultyBits: 0 };
 }
 
 export const Params: MessageFns<Params> = {
@@ -68,6 +71,12 @@ export const Params: MessageFns<Params> = {
     }
     if (message.allowAccountRotate !== false) {
       writer.uint32(32).bool(message.allowAccountRotate);
+    }
+    if (message.minBalanceForLink !== undefined) {
+      Coin.encode(message.minBalanceForLink, writer.uint32(42).fork()).join();
+    }
+    if (message.powDifficultyBits !== 0) {
+      writer.uint32(48).uint32(message.powDifficultyBits);
     }
     return writer;
   },
@@ -103,6 +112,22 @@ export const Params: MessageFns<Params> = {
           message.allowAccountRotate = reader.bool();
           continue;
         }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.minBalanceForLink = Coin.decode(reader, reader.uint32());
+          continue;
+        }
+        case 6: {
+          if (tag !== 48) {
+            break;
+          }
+
+          message.powDifficultyBits = reader.uint32();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -117,6 +142,8 @@ export const Params: MessageFns<Params> = {
       policy: isSet(object.policy) ? pqcPolicyFromJSON(object.policy) : 0,
       minScheme: isSet(object.minScheme) ? globalThis.String(object.minScheme) : "",
       allowAccountRotate: isSet(object.allowAccountRotate) ? globalThis.Boolean(object.allowAccountRotate) : false,
+      minBalanceForLink: isSet(object.minBalanceForLink) ? Coin.fromJSON(object.minBalanceForLink) : undefined,
+      powDifficultyBits: isSet(object.powDifficultyBits) ? globalThis.Number(object.powDifficultyBits) : 0,
     };
   },
 
@@ -131,6 +158,12 @@ export const Params: MessageFns<Params> = {
     if (message.allowAccountRotate !== false) {
       obj.allowAccountRotate = message.allowAccountRotate;
     }
+    if (message.minBalanceForLink !== undefined) {
+      obj.minBalanceForLink = Coin.toJSON(message.minBalanceForLink);
+    }
+    if (message.powDifficultyBits !== 0) {
+      obj.powDifficultyBits = Math.round(message.powDifficultyBits);
+    }
     return obj;
   },
 
@@ -142,6 +175,10 @@ export const Params: MessageFns<Params> = {
     message.policy = object.policy ?? 0;
     message.minScheme = object.minScheme ?? "";
     message.allowAccountRotate = object.allowAccountRotate ?? false;
+    message.minBalanceForLink = (object.minBalanceForLink !== undefined && object.minBalanceForLink !== null)
+      ? Coin.fromPartial(object.minBalanceForLink)
+      : undefined;
+    message.powDifficultyBits = object.powDifficultyBits ?? 0;
     return message;
   },
 };

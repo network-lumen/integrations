@@ -2,6 +2,7 @@ export { PqcKeyStore, defaultHomeDir } from "./keystore.js";
 export type { KeyRecord } from "./keystore.js";
 export { createKeyPair, sign as signDilithium } from "./signer.js";
 export { computeSignBytes, sanitizeBodyBytes, withPqcExtension } from "./tx.js";
+export { computePowNonce, computePowDigest, leadingZeroBits } from "./pow.js";
 export {
   DEFAULT_SCHEME,
   PQC_PREFIX,

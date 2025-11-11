@@ -21,7 +21,7 @@ cleanup() {
   if [[ "$KEEP_CONTAINER" -eq 0 ]]; then
     clean_node_state
   else
-    docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
+    echo "KEEP_CONTAINER=1 -> leaving container '$CONTAINER_NAME' and node data intact." >&2
   fi
 }
 trap cleanup EXIT INT TERM

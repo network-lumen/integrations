@@ -26,6 +26,7 @@ describe("pqc tx helpers", () => {
       addr: "lmn1deadbeef",
       scheme: "dilithium3",
       signature: new Uint8Array([4, 5, 6]),
+      pubKey: new Uint8Array([7, 8, 9]),
     }]);
     const decoded = TxBody.decode(next);
     expect(decoded.nonCriticalExtensionOptions).toHaveLength(1);

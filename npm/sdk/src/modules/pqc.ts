@@ -19,19 +19,23 @@ export class PqcModule extends BaseModule {
     return this.get("/params");
   }
 
-  msgLinkAccountPqc(creator: string, payload: { scheme: string; pubKey: Uint8Array | string }): EncodeObject {
+  msgLinkAccountPqc(
+    creator: string,
+    payload: { scheme: string; pubKey: Uint8Array | string; powNonce?: Uint8Array | string },
+  ): EncodeObject {
     return {
       typeUrl: "/lumen.pqc.v1.MsgLinkAccountPQC",
       value: MsgLinkAccountPQC.fromPartial({
         creator,
         scheme: payload.scheme,
-        pubKey: normalizePubKey(payload.pubKey),
+        pubKey: normalizeBytes(payload.pubKey),
+        powNonce: payload.powNonce ? normalizeBytes(payload.powNonce) : new Uint8Array(),
       }),
     };
   }
 }
 
-function normalizePubKey(value: Uint8Array | string): Uint8Array {
+function normalizeBytes(value: Uint8Array | string): Uint8Array {
   if (value instanceof Uint8Array) return value;
   const trimmed = value.trim();
   if (/^[0-9a-f]+$/i.test(trimmed)) return fromHex(trimmed);

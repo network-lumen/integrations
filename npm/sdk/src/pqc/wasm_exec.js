@@ -4,6 +4,18 @@
 
 "use strict";
 
+const __dirname = (() => {
+	if (typeof globalThis.__dirname === "string") return globalThis.__dirname;
+	try {
+		const resolved = typeof import.meta !== "undefined" ? new URL(".", import.meta.url).pathname : ".";
+		globalThis.__dirname = resolved;
+		return resolved;
+	} catch {
+		globalThis.__dirname = ".";
+		return ".";
+	}
+})();
+
 const Go = (() => {
 	const enosys = () => {
 		const err = new Error("not implemented");

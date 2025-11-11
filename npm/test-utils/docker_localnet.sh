@@ -26,7 +26,7 @@ VALIDATOR_KEY_NAME="${VALIDATOR_KEY_NAME:-validator}"
 mkdir -p "$NODE_HOME"
 mkdir -p "$BIN_CACHE"
 
-DEFAULT_RELEASE_URL="https://github.com/network-lumen/blockchain/releases/download/v0.9.0/lumend-v0.9.0-linux-amd64.tar.gz"
+DEFAULT_RELEASE_URL="https://github.com/network-lumen/blockchain/releases/download/v0.10.0/v0.10.0-linux-amd64.zip"
 RELEASE_URL="${LUMEN_RELEASE_URL:-$DEFAULT_RELEASE_URL}"
 ARCHIVE_NAME="$(basename "$RELEASE_URL")"
 
@@ -228,15 +228,15 @@ docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
 docker run -d \
   --name "$CONTAINER_NAME" \
   -v "$NODE_HOME":/root/.lumen \
-  -p 26657:26657 \
-  -p 1317:1317 \
-  -p 9090:9090 \
+  -p 27657:26657 \
+  -p 2327:1317 \
+  -p 9190:9090 \
   "$IMAGE_TAG" start --home /root/.lumen >/dev/null
 
 echo "➤ Waiting for RPC endpoint..."
 for _ in $(seq 1 45); do
-  if curl -sf http://127.0.0.1:26657/status >/dev/null; then
-    echo "Node is live. RPC=http://127.0.0.1:26657 REST=http://127.0.0.1:1317 gRPC=http://127.0.0.1:9090"
+  if curl -sf http://127.0.0.1:27657/status >/dev/null; then
+    echo "Node is live. RPC=http://127.0.0.1:27657 REST=http://127.0.0.1:2327 gRPC=http://127.0.0.1:9190"
     echo "Validator mnemonic saved under $NODE_HOME/validator.json"
     exit 0
   fi

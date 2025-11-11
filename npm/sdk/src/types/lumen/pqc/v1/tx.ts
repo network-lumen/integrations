@@ -13,13 +13,14 @@ export interface MsgLinkAccountPQC {
   creator: string;
   scheme: string;
   pubKey: Uint8Array;
+  powNonce: Uint8Array;
 }
 
 export interface MsgLinkAccountPQCResponse {
 }
 
 function createBaseMsgLinkAccountPQC(): MsgLinkAccountPQC {
-  return { creator: "", scheme: "", pubKey: new Uint8Array(0) };
+  return { creator: "", scheme: "", pubKey: new Uint8Array(0), powNonce: new Uint8Array(0) };
 }
 
 export const MsgLinkAccountPQC: MessageFns<MsgLinkAccountPQC> = {
@@ -32,6 +33,9 @@ export const MsgLinkAccountPQC: MessageFns<MsgLinkAccountPQC> = {
     }
     if (message.pubKey.length !== 0) {
       writer.uint32(26).bytes(message.pubKey);
+    }
+    if (message.powNonce.length !== 0) {
+      writer.uint32(34).bytes(message.powNonce);
     }
     return writer;
   },
@@ -67,6 +71,14 @@ export const MsgLinkAccountPQC: MessageFns<MsgLinkAccountPQC> = {
           message.pubKey = reader.bytes();
           continue;
         }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.powNonce = reader.bytes();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -81,6 +93,7 @@ export const MsgLinkAccountPQC: MessageFns<MsgLinkAccountPQC> = {
       creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
       scheme: isSet(object.scheme) ? globalThis.String(object.scheme) : "",
       pubKey: isSet(object.pubKey) ? bytesFromBase64(object.pubKey) : new Uint8Array(0),
+      powNonce: isSet(object.powNonce) ? bytesFromBase64(object.powNonce) : new Uint8Array(0),
     };
   },
 
@@ -95,6 +108,9 @@ export const MsgLinkAccountPQC: MessageFns<MsgLinkAccountPQC> = {
     if (message.pubKey.length !== 0) {
       obj.pubKey = base64FromBytes(message.pubKey);
     }
+    if (message.powNonce.length !== 0) {
+      obj.powNonce = base64FromBytes(message.powNonce);
+    }
     return obj;
   },
 
@@ -106,6 +122,7 @@ export const MsgLinkAccountPQC: MessageFns<MsgLinkAccountPQC> = {
     message.creator = object.creator ?? "";
     message.scheme = object.scheme ?? "";
     message.pubKey = object.pubKey ?? new Uint8Array(0);
+    message.powNonce = object.powNonce ?? new Uint8Array(0);
     return message;
   },
 };

@@ -1,9 +1,9 @@
 export const LUMEN = {
   chainId: "lumen",
   bech32Prefix: "lmn",
-  defaultRpc: "http://127.0.0.1:26657",
-  defaultRest: "http://127.0.0.1:1317",
-  defaultGrpc: "http://127.0.0.1:9090",
+  defaultRpc: "http://127.0.0.1:27657",
+  defaultRest: "http://127.0.0.1:2327",
+  defaultGrpc: "http://127.0.0.1:9190",
   gaslessTypeUrls: [
     "/lumen.gateway.v1.MsgCreateContract",
     "/lumen.gateway.v1.MsgRegisterGateway",
