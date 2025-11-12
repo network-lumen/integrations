@@ -118,7 +118,7 @@ npm run gen:proto    # buf generate --template buf.gen.ts.yaml
 
 You can exercise the SDK against a local Dockerized node:
 
-1. `npm run docker:node` (requires Docker, `jq`, `python3`, `curl`). This downloads the published `lumend` binary from [v0.10.0](https://github.com/network-lumen/blockchain/releases/tag/v0.10.0) (override via `LUMEN_RELEASE_URL`), packs it into a slim runtime image, initializes a single-node network under `artifacts/docker-node/`, and exposes RPC/REST/gRPC on `127.0.0.1:{27657,2327,9190}`. The validator mnemonic is stored in `artifacts/docker-node/validator.json`.
+1. `npm run docker:node` (requires Docker, `jq`, `python3`, `curl`). This downloads the published `lumend` binary from [v0.10.1](https://github.com/network-lumen/blockchain/releases/tag/v0.10.1) (override via `LUMEN_RELEASE_URL`), packs it into a slim runtime image, initializes a single-node network under `artifacts/docker-node/`, and exposes RPC/REST/gRPC on `127.0.0.1:{27657,2327,9190}`. The validator mnemonic is stored in `artifacts/docker-node/validator.json`.
    - `npm run test:docker` automates steps 1–3 below and shuts the container down afterward (use `KEEP_CONTAINER=1 npm run test:docker` if you want to keep it running). To test another release tag, set `LUMEN_RELEASE_URL=https://github.com/network-lumen/blockchain/releases/download/<tag>/lumend-<tag>-linux-amd64.tar.gz`.
 2. `npm run sdk:smoke` builds the SDK and executes `scripts/sdk_smoke.mjs`, which:
    - derives the validator signer from the mnemonic,
@@ -132,7 +132,7 @@ Override endpoints via `LUMEN_RPC`, `LUMEN_REST`, `LUMEN_GRPC`, and customize th
 
 #### Using a tagged chain release
 
-The script caches the archive under `artifacts/bin-cache/` and reuses it until you set `FORCE_LUMEN_DOWNLOAD=1`. By default we pin to `v0.10.0`; for future releases, set `LUMEN_RELEASE_URL` to the new asset (e.g. `https://github.com/network-lumen/blockchain/releases/download/v0.x.y/v0.x.y-linux-amd64.zip`). Both `.zip` and `.tar.gz` archives are supported—set the env var to whichever format the release publishes and the helper will auto-detect it.
+The script caches the archive under `artifacts/bin-cache/` and reuses it until you set `FORCE_LUMEN_DOWNLOAD=1`. By default we pin to `v0.10.1`; for future releases, set `LUMEN_RELEASE_URL` to the new asset (e.g. `https://github.com/network-lumen/blockchain/releases/download/v0.x.y/v0.x.y-linux-amd64.zip`). Both `.zip` and `.tar.gz` archives are supported—set the env var to whichever format the release publishes and the helper will auto-detect it.
 
 ### Future integrations
 

@@ -26,7 +26,7 @@ VALIDATOR_KEY_NAME="${VALIDATOR_KEY_NAME:-validator}"
 mkdir -p "$NODE_HOME"
 mkdir -p "$BIN_CACHE"
 
-DEFAULT_RELEASE_URL="https://github.com/network-lumen/blockchain/releases/download/v0.10.0/v0.10.0-linux-amd64.zip"
+DEFAULT_RELEASE_URL="https://github.com/network-lumen/blockchain/releases/download/v0.10.1/v0.10.1-linux-amd64.zip"
 RELEASE_URL="${LUMEN_RELEASE_URL:-$DEFAULT_RELEASE_URL}"
 ARCHIVE_NAME="$(basename "$RELEASE_URL")"
 
@@ -180,6 +180,7 @@ data = json.loads(genesis_path.read_text())
 dns_params = data.get("app_state", {}).get("dns", {}).get("params", {})
 dns_params["update_rate_limit_seconds"] = "1"
 dns_params["update_pow_difficulty"] = 0
+dns_params["min_price_ulmn_per_month"] = "600000"
 
 gateway_params = data.get("app_state", {}).get("gateways", {}).get("params", {})
 gateway_params["month_seconds"] = "1"

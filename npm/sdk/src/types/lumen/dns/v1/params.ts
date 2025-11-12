@@ -24,6 +24,7 @@ export interface Params {
   domainTiers: LengthTier[];
   extTiers: LengthTier[];
   minPriceUlmnPerMonth: number;
+  updateFeeUlmn: number;
 }
 
 /**
@@ -52,6 +53,7 @@ function createBaseParams(): Params {
     domainTiers: [],
     extTiers: [],
     minPriceUlmnPerMonth: 0,
+    updateFeeUlmn: 0,
   };
 }
 
@@ -98,6 +100,9 @@ export const Params: MessageFns<Params> = {
     }
     if (message.minPriceUlmnPerMonth !== 0) {
       writer.uint32(144).uint64(message.minPriceUlmnPerMonth);
+    }
+    if (message.updateFeeUlmn !== 0) {
+      writer.uint32(152).uint64(message.updateFeeUlmn);
     }
     return writer;
   },
@@ -221,6 +226,14 @@ export const Params: MessageFns<Params> = {
           message.minPriceUlmnPerMonth = longToNumber(reader.uint64());
           continue;
         }
+        case 19: {
+          if (tag !== 152) {
+            break;
+          }
+
+          message.updateFeeUlmn = longToNumber(reader.uint64());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -252,6 +265,7 @@ export const Params: MessageFns<Params> = {
         ? object.extTiers.map((e: any) => LengthTier.fromJSON(e))
         : [],
       minPriceUlmnPerMonth: isSet(object.minPriceUlmnPerMonth) ? globalThis.Number(object.minPriceUlmnPerMonth) : 0,
+      updateFeeUlmn: isSet(object.updateFeeUlmn) ? globalThis.Number(object.updateFeeUlmn) : 0,
     };
   },
 
@@ -299,6 +313,9 @@ export const Params: MessageFns<Params> = {
     if (message.minPriceUlmnPerMonth !== 0) {
       obj.minPriceUlmnPerMonth = Math.round(message.minPriceUlmnPerMonth);
     }
+    if (message.updateFeeUlmn !== 0) {
+      obj.updateFeeUlmn = Math.round(message.updateFeeUlmn);
+    }
     return obj;
   },
 
@@ -321,6 +338,7 @@ export const Params: MessageFns<Params> = {
     message.domainTiers = object.domainTiers?.map((e) => LengthTier.fromPartial(e)) || [];
     message.extTiers = object.extTiers?.map((e) => LengthTier.fromPartial(e)) || [];
     message.minPriceUlmnPerMonth = object.minPriceUlmnPerMonth ?? 0;
+    message.updateFeeUlmn = object.updateFeeUlmn ?? 0;
     return message;
   },
 };

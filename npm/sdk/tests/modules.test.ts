@@ -75,6 +75,12 @@ describe("DnsModule", () => {
     expect(msg.value.end).toBe(2);
     expect(msg.value.highestBid).toBe("");
   });
+
+  it("params exposes update_fee_ulmn", async () => {
+    fetchMock = setupFetchMock({ params: { update_fee_ulmn: "42" } });
+    const res = await module.params();
+    expect(res.params.update_fee_ulmn).toBe("42");
+  });
 });
 
 describe("GatewaysModule", () => {

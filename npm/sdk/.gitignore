@@ -7,3 +7,5 @@ coverage
 *.log
 ../artifacts/docker-node/
 ../artifacts/bin-cache/
+*.tgz
+package-lock.json
