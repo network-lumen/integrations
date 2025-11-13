@@ -2,13 +2,14 @@ import { StargateClient } from "@cosmjs/stargate";
 import type { Coin } from "@cosmjs/proto-signing";
 
 import { LUMEN, type LumenEndpoints } from "../constants.js";
-import { DnsModule, GatewaysModule, PqcModule, ReleasesModule, TokenomicsModule } from "../modules/index.js";
+import { DnsModule, GatewaysModule, GovModule, PqcModule, ReleasesModule, TokenomicsModule } from "../modules/index.js";
 
 type ModuleCache = {
   dns?: DnsModule;
   gateways?: GatewaysModule;
   releases?: ReleasesModule;
   tokenomics?: TokenomicsModule;
+  gov?: GovModule;
   pqc?: PqcModule;
 };
 
@@ -90,6 +91,11 @@ export class LumenClient {
   tokenomics(): TokenomicsModule {
     if (!this.modules.tokenomics) this.modules.tokenomics = new TokenomicsModule(this.rest);
     return this.modules.tokenomics;
+  }
+
+  gov(): GovModule {
+    if (!this.modules.gov) this.modules.gov = new GovModule(this.rest);
+    return this.modules.gov;
   }
 
   pqc(): PqcModule {

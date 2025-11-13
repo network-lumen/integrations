@@ -26,7 +26,7 @@ VALIDATOR_KEY_NAME="${VALIDATOR_KEY_NAME:-validator}"
 mkdir -p "$NODE_HOME"
 mkdir -p "$BIN_CACHE"
 
-DEFAULT_RELEASE_URL="https://github.com/network-lumen/blockchain/releases/download/v0.10.1/v0.10.1-linux-amd64.zip"
+DEFAULT_RELEASE_URL="https://github.com/network-lumen/blockchain/releases/download/v0.11.0/linux-amd64-v0.11.0.tar.gz"
 RELEASE_URL="${LUMEN_RELEASE_URL:-$DEFAULT_RELEASE_URL}"
 ARCHIVE_NAME="$(basename "$RELEASE_URL")"
 
@@ -235,15 +235,19 @@ docker run -d \
   "$IMAGE_TAG" start --home /root/.lumen >/dev/null
 
 echo "➤ Waiting for RPC endpoint..."
-for _ in $(seq 1 45); do
+started_at=$(date +%s)
+while true; do
   if curl -sf http://127.0.0.1:27657/status >/dev/null; then
     echo "Node is live. RPC=http://127.0.0.1:27657 REST=http://127.0.0.1:2327 gRPC=http://127.0.0.1:9190"
     echo "Validator mnemonic saved under $NODE_HOME/validator.json"
-    exit 0
+    break
+  fi
+  now=$(date +%s)
+  elapsed=$((now - started_at))
+  if [ "$elapsed" -ge "${TM_RPC_TIMEOUT:-120}" ]; then
+    echo "error: node did not become ready within ${TM_RPC_TIMEOUT:-120}s" >&2
+    docker logs "$CONTAINER_NAME" | tail -n 50 >&2
+    exit 1
   fi
   sleep 2
 done
-
-echo "error: node did not become ready in time" >&2
-docker logs "$CONTAINER_NAME" | tail -n 50 >&2
-exit 1

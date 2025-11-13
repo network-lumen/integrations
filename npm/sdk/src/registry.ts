@@ -36,6 +36,14 @@ import {
 } from "./types/lumen/release/v1/tx.js";
 import { MsgUpdateParams as MsgTokenomicsUpdateParams } from "./types/lumen/tokenomics/v1/tx.js";
 import { MsgLinkAccountPQC } from "./types/lumen/pqc/v1/tx.js";
+import {
+  MsgSubmitProposal,
+  MsgVote,
+  MsgVoteWeighted,
+  MsgDeposit,
+  MsgExecLegacyContent,
+  MsgUpdateParams as MsgGovUpdateParams,
+} from "cosmjs-types/cosmos/gov/v1/tx.js";
 
 const customTypes: Array<[string, GeneratedType]> = [
   ["/lumen.dns.v1.MsgUpdateParams", MsgDnsUpdateParams as unknown as GeneratedType],
@@ -67,6 +75,12 @@ const customTypes: Array<[string, GeneratedType]> = [
   ["/lumen.release.v1.MsgUpdateParams", MsgReleaseUpdateParams as unknown as GeneratedType],
   ["/lumen.tokenomics.v1.MsgUpdateParams", MsgTokenomicsUpdateParams as unknown as GeneratedType],
   ["/lumen.pqc.v1.MsgLinkAccountPQC", MsgLinkAccountPQC as unknown as GeneratedType],
+  ["/cosmos.gov.v1.MsgSubmitProposal", MsgSubmitProposal as unknown as GeneratedType],
+  ["/cosmos.gov.v1.MsgDeposit", MsgDeposit as unknown as GeneratedType],
+  ["/cosmos.gov.v1.MsgVote", MsgVote as unknown as GeneratedType],
+  ["/cosmos.gov.v1.MsgVoteWeighted", MsgVoteWeighted as unknown as GeneratedType],
+  ["/cosmos.gov.v1.MsgExecLegacyContent", MsgExecLegacyContent as unknown as GeneratedType],
+  ["/cosmos.gov.v1.MsgUpdateParams", MsgGovUpdateParams as unknown as GeneratedType],
 ];
 
 export function createRegistry(): Registry {

@@ -24,6 +24,7 @@ export interface Params {
   domainTiers: LengthTier[];
   extTiers: LengthTier[];
   minPriceUlmnPerMonth: number;
+  /** Flat fee (in ulmn) charged on every MsgUpdate. */
   updateFeeUlmn: number;
 }
 

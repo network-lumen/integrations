@@ -4,7 +4,7 @@ import type { DeliverTxResponse } from "@cosmjs/stargate";
 import type { LumenEndpoints } from "./constants.js";
 import type { LumenSigningClientOptions } from "./client/signing.js";
 import { LumenSigningClient } from "./client/signing.js";
-import { DnsModule, GatewaysModule, ReleasesModule, TokenomicsModule } from "./modules/index.js";
+import { DnsModule, GatewaysModule, GovModule, ReleasesModule, TokenomicsModule } from "./modules/index.js";
 import type { EncodeObject } from "@cosmjs/proto-signing";
 
 export class LumenSDK {
@@ -33,6 +33,10 @@ export class LumenSDK {
 
   tokenomics(): TokenomicsModule {
     return this.client.tokenomics();
+  }
+
+  gov(): GovModule {
+    return this.client.gov();
   }
 
   async getAccountSnapshot(address: string) {
@@ -114,6 +118,22 @@ export class LumenSDK {
 
   async updateTokenomics(authority: string, params: Parameters<TokenomicsModule["msgUpdateParams"]>[1]) {
     return this.broadcast(authority, [this.client.tokenomics().msgUpdateParams(authority, params)]);
+  }
+
+  async submitProposal(proposer: string, payload: Parameters<GovModule["msgSubmitProposal"]>[1]) {
+    return this.broadcast(proposer, [this.client.gov().msgSubmitProposal(proposer, payload)]);
+  }
+
+  async depositToProposal(depositor: string, payload: Parameters<GovModule["msgDeposit"]>[1]) {
+    return this.broadcast(depositor, [this.client.gov().msgDeposit(depositor, payload)]);
+  }
+
+  async voteOnProposal(voter: string, payload: Parameters<GovModule["msgVote"]>[1]) {
+    return this.broadcast(voter, [this.client.gov().msgVote(voter, payload)]);
+  }
+
+  async voteWeightedOnProposal(voter: string, payload: Parameters<GovModule["msgVoteWeighted"]>[1]) {
+    return this.broadcast(voter, [this.client.gov().msgVoteWeighted(voter, payload)]);
   }
 
   private broadcast(sender: string, msgs: EncodeObject[]): Promise<DeliverTxResponse> {

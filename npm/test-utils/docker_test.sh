@@ -34,7 +34,7 @@ CONTAINER_NAME="$CONTAINER_NAME" bash "$SCRIPT_DIR/docker_localnet.sh"
 
 run_npm_script() {
   local script="$1"
-  if [[ -s "$HOME/.nvm/nvm.sh" ]]; then
+if [[ -s "$HOME/.nvm/nvm.sh" ]]; then
     # shellcheck source=/dev/null
     bash -lc "source \"$HOME/.nvm/nvm.sh\" && cd \"$PKG_ROOT\" && npm run ${script}"
   else

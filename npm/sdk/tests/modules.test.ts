@@ -4,9 +4,11 @@ import { DnsModule } from "../src/modules/dns.js";
 import { GatewaysModule } from "../src/modules/gateways.js";
 import { ReleasesModule } from "../src/modules/releases.js";
 import { TokenomicsModule } from "../src/modules/tokenomics.js";
+import { GovModule } from "../src/modules/gov.js";
 import { joinRest, withQuery } from "../src/rest.js";
 import type { Release } from "../src/types/lumen/release/v1/types.js";
 import { Release_ReleaseStatus } from "../src/types/lumen/release/v1/types.js";
+import { VoteOption } from "cosmjs-types/cosmos/gov/v1/gov.js";
 
 const REST = "http://localhost:2327";
 
@@ -174,5 +176,47 @@ describe("TokenomicsModule", () => {
     const msg = module.msgUpdateParams("authority", { txTaxRate: "0.01" } as any);
     expect(msg.typeUrl).toBe("/lumen.tokenomics.v1.MsgUpdateParams");
     expect(msg.value.authority).toBe("authority");
+  });
+});
+
+describe("GovModule", () => {
+  it("params default set", async () => {
+    const module = new GovModule(REST);
+    const fetchMock = setupFetchMock({ params: { voting_period: "60s" } });
+    await module.params();
+    expect(fetchMock).toHaveBeenCalledWith(
+      "http://localhost:2327/cosmos/gov/v1/params",
+      expect.any(Object),
+    );
+  });
+
+  it("proposals builds query", async () => {
+    const module = new GovModule(REST);
+    const fetchMock = setupFetchMock({});
+    await module.proposals({ status: "PROPOSAL_STATUS_VOTING_PERIOD", limit: 5 });
+    expect(fetchMock).toHaveBeenCalledWith(
+      "http://localhost:2327/cosmos/gov/v1/proposals?pagination.limit=5&proposal_status=PROPOSAL_STATUS_VOTING_PERIOD",
+      expect.any(Object),
+    );
+  });
+
+  it("msgSubmitProposal wraps fields", () => {
+    const module = new GovModule();
+    const msg = module.msgSubmitProposal("addr", {
+      messages: [],
+      title: "title",
+      summary: "summary",
+      initialDeposit: [{ denom: "ulmn", amount: "10" }],
+    });
+    expect(msg.typeUrl).toBe("/cosmos.gov.v1.MsgSubmitProposal");
+    expect(msg.value.title).toBe("title");
+    expect(msg.value.initialDeposit[0].amount).toBe("10");
+  });
+
+  it("msgVote composes numbers", () => {
+    const module = new GovModule();
+    const msg = module.msgVote("addr", { proposalId: 12, option: VoteOption.VOTE_OPTION_YES });
+    expect(msg.value.proposalId).toBe(12n);
+    expect(msg.value.option).toBe(VoteOption.VOTE_OPTION_YES);
   });
 });
