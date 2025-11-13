@@ -64,7 +64,16 @@ download_release_binary() {
   elif [[ -f "$extract_dir/lumend.exe" ]]; then
     candidate="$extract_dir/lumend.exe"
   else
-    candidate="$(find "$extract_dir" -type f -name 'lumend*' | head -n1 || true)"
+    candidate="$(find "$extract_dir" -maxdepth 1 -type f -perm -u+x -print -quit || true)"
+    if [[ -z "$candidate" ]]; then
+      candidate="$(find "$extract_dir" -maxdepth 1 -type f -print -quit || true)"
+    fi
+    if [[ -z "$candidate" ]]; then
+      candidate="$(find "$extract_dir" -type f -perm -u+x -print -quit || true)"
+    fi
+    if [[ -z "$candidate" ]]; then
+      candidate="$(find "$extract_dir" -type f -print -quit || true)"
+    fi
   fi
   if [[ -z "$candidate" ]]; then
     echo "error: could not locate lumend binary inside archive" >&2
