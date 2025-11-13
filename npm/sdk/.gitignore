@@ -8,4 +8,3 @@ coverage
 ../artifacts/docker-node/
 ../artifacts/bin-cache/
 *.tgz
-package-lock.json
