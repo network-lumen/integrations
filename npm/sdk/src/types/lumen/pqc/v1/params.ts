@@ -52,13 +52,12 @@ export function pqcPolicyToJSON(object: PqcPolicy): string {
 export interface Params {
   policy: PqcPolicy;
   minScheme: string;
-  allowAccountRotate: boolean;
   minBalanceForLink: Coin | undefined;
   powDifficultyBits: number;
 }
 
 function createBaseParams(): Params {
-  return { policy: 0, minScheme: "", allowAccountRotate: false, minBalanceForLink: undefined, powDifficultyBits: 0 };
+  return { policy: 0, minScheme: "", minBalanceForLink: undefined, powDifficultyBits: 0 };
 }
 
 export const Params: MessageFns<Params> = {
@@ -68,9 +67,6 @@ export const Params: MessageFns<Params> = {
     }
     if (message.minScheme !== "") {
       writer.uint32(26).string(message.minScheme);
-    }
-    if (message.allowAccountRotate !== false) {
-      writer.uint32(32).bool(message.allowAccountRotate);
     }
     if (message.minBalanceForLink !== undefined) {
       Coin.encode(message.minBalanceForLink, writer.uint32(42).fork()).join();
@@ -104,14 +100,6 @@ export const Params: MessageFns<Params> = {
           message.minScheme = reader.string();
           continue;
         }
-        case 4: {
-          if (tag !== 32) {
-            break;
-          }
-
-          message.allowAccountRotate = reader.bool();
-          continue;
-        }
         case 5: {
           if (tag !== 42) {
             break;
@@ -141,7 +129,6 @@ export const Params: MessageFns<Params> = {
     return {
       policy: isSet(object.policy) ? pqcPolicyFromJSON(object.policy) : 0,
       minScheme: isSet(object.minScheme) ? globalThis.String(object.minScheme) : "",
-      allowAccountRotate: isSet(object.allowAccountRotate) ? globalThis.Boolean(object.allowAccountRotate) : false,
       minBalanceForLink: isSet(object.minBalanceForLink) ? Coin.fromJSON(object.minBalanceForLink) : undefined,
       powDifficultyBits: isSet(object.powDifficultyBits) ? globalThis.Number(object.powDifficultyBits) : 0,
     };
@@ -154,9 +141,6 @@ export const Params: MessageFns<Params> = {
     }
     if (message.minScheme !== "") {
       obj.minScheme = message.minScheme;
-    }
-    if (message.allowAccountRotate !== false) {
-      obj.allowAccountRotate = message.allowAccountRotate;
     }
     if (message.minBalanceForLink !== undefined) {
       obj.minBalanceForLink = Coin.toJSON(message.minBalanceForLink);
@@ -174,7 +158,6 @@ export const Params: MessageFns<Params> = {
     const message = createBaseParams();
     message.policy = object.policy ?? 0;
     message.minScheme = object.minScheme ?? "";
-    message.allowAccountRotate = object.allowAccountRotate ?? false;
     message.minBalanceForLink = (object.minBalanceForLink !== undefined && object.minBalanceForLink !== null)
       ? Coin.fromPartial(object.minBalanceForLink)
       : undefined;

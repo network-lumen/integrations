@@ -1,6 +1,6 @@
 {
   "name": "@lumen-chain/sdk",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "description": "Full-featured TypeScript/JavaScript SDK for the Lumen Cosmos SDK chain (queries, tx builders, PQC dual-sign support).",
   "type": "module",
   "main": "dist/index.js",
@@ -31,7 +31,7 @@
     "node:docker": "bash ../test-utils/docker_localnet.sh",
     "sdk:smoke": "npm run build && NODE_PATH=./node_modules node ../test-utils/sdk_smoke.mjs",
     "sdk:functional": "npm run build && NODE_PATH=./node_modules node ../test-utils/sdk_functional.mjs",
-    "test:docker": "LUMEN_RELEASE_URL=https://github.com/network-lumen/blockchain/releases/download/v0.11.0/linux-amd64-v0.11.0.tar.gz bash ../test-utils/docker_test.sh",
+    "test:docker": "LUMEN_RELEASE_URL=https://github.com/network-lumen/blockchain/releases/download/v0.12.0/linux-amd64-v0.12.0.tar.gz bash ../test-utils/docker_test.sh",
     "copy:assets": "node scripts/copy_assets.mjs"
   },
   "keywords": [
