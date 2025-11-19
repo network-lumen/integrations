@@ -12,6 +12,7 @@ require docker
 require jq
 require python3
 require curl
+require file
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PKG_ROOT="$(cd "$SCRIPT_DIR/../sdk" && pwd)"
 REPO_ROOT="$(cd "$PKG_ROOT/../../.." && pwd)"
@@ -26,9 +27,37 @@ VALIDATOR_KEY_NAME="${VALIDATOR_KEY_NAME:-validator}"
 mkdir -p "$NODE_HOME"
 mkdir -p "$BIN_CACHE"
 
-DEFAULT_RELEASE_URL="https://github.com/network-lumen/blockchain/releases/download/v0.12.0/linux-amd64-v0.12.0.tar.gz"
+DEFAULT_RELEASE_URL="https://github.com/network-lumen/blockchain/releases/download/v1.0.1/linux-amd64-v1.0.1.tar.gz"
 RELEASE_URL="${LUMEN_RELEASE_URL:-$DEFAULT_RELEASE_URL}"
 ARCHIVE_NAME="$(basename "$RELEASE_URL")"
+
+detect_archive_type() {
+  local file_path="$1"
+  if [[ ! -s "$file_path" ]]; then
+    echo "unknown"
+    return
+  fi
+  local mime=""
+  mime=$(file -b --mime-type "$file_path" 2>/dev/null || true)
+  case "$mime" in
+    application/gzip|application/x-gzip) echo "tar.gz"; return ;;
+    application/zip) echo "zip"; return ;;
+    application/x-executable|application/x-pie-executable|application/x-elf|application/octet-stream) echo "binary"; return ;;
+  esac
+  if [[ "$file_path" == *.tar.gz || "$file_path" == *.tgz ]]; then
+    echo "tar.gz"
+    return
+  fi
+  if [[ "$file_path" == *.zip ]]; then
+    echo "zip"
+    return
+  fi
+  if [[ -x "$file_path" ]]; then
+    echo "binary"
+    return
+  fi
+  echo "unknown"
+}
 
 resolve_relative() {
   python3 - <<'PY' "$1" "$2"
@@ -43,21 +72,43 @@ download_release_binary() {
   local archive_path="$BIN_CACHE/$ARCHIVE_NAME"
   if [[ ! -f "$archive_path" || "${FORCE_LUMEN_DOWNLOAD:-0}" -eq 1 ]]; then
     echo "➤ Downloading lumend archive from $url"
-    curl -L "$url" -o "$archive_path"
+    if ! curl -fL "$url" -o "$archive_path"; then
+      rm -f "$archive_path"
+      echo "error: failed to download lumend archive from $url" >&2
+      exit 1
+    fi
   else
     echo "➤ Reusing cached archive $archive_path"
   fi
   local extract_dir
   extract_dir="$(mktemp -d)"
-  if [[ "$archive_path" == *.tar.gz ]]; then
-    tar -C "$extract_dir" -xzf "$archive_path"
-  elif [[ "$archive_path" == *.zip ]]; then
-    require unzip
-    unzip -q "$archive_path" -d "$extract_dir"
-  else
-    echo "error: unsupported archive format: $archive_path" >&2
-    exit 1
-  fi
+  local archive_type
+  archive_type="$(detect_archive_type "$archive_path")"
+  case "$archive_type" in
+    tar.gz)
+      if ! tar -C "$extract_dir" -xzf "$archive_path"; then
+        rm -rf "$extract_dir" "$archive_path"
+        echo "error: failed to extract tar.gz archive (cache cleared, retry the command)" >&2
+        exit 1
+      fi
+      ;;
+    zip)
+      require unzip
+      if ! unzip -q "$archive_path" -d "$extract_dir"; then
+        rm -rf "$extract_dir" "$archive_path"
+        echo "error: failed to extract zip archive (cache cleared, retry the command)" >&2
+        exit 1
+      fi
+      ;;
+    binary)
+      cp "$archive_path" "$extract_dir/lumend"
+      ;;
+    *)
+      rm -rf "$extract_dir" "$archive_path"
+      echo "error: unsupported or corrupted archive: $archive_path" >&2
+      exit 1
+      ;;
+  esac
   local candidate=""
   if [[ -f "$extract_dir/lumend" ]]; then
     candidate="$extract_dir/lumend"
