@@ -27,7 +27,7 @@ VALIDATOR_KEY_NAME="${VALIDATOR_KEY_NAME:-validator}"
 mkdir -p "$NODE_HOME"
 mkdir -p "$BIN_CACHE"
 
-DEFAULT_RELEASE_URL="https://github.com/network-lumen/blockchain/releases/download/v1.0.1/linux-amd64-v1.0.1.tar.gz"
+DEFAULT_RELEASE_URL="https://github.com/network-lumen/blockchain/releases/download/v1.1.0/linux-amd64-v1.1.0.tar.gz"
 RELEASE_URL="${LUMEN_RELEASE_URL:-$DEFAULT_RELEASE_URL}"
 ARCHIVE_NAME="$(basename "$RELEASE_URL")"
 
