@@ -27,7 +27,7 @@ VALIDATOR_KEY_NAME="${VALIDATOR_KEY_NAME:-validator}"
 mkdir -p "$NODE_HOME"
 mkdir -p "$BIN_CACHE"
 
-DEFAULT_RELEASE_URL="https://github.com/network-lumen/blockchain/releases/download/v1.1.0/linux-amd64-v1.1.0.tar.gz"
+DEFAULT_RELEASE_URL="https://github.com/network-lumen/blockchain/releases/download/v1.2.0/linux-amd64-v1.1.0.tar.gz"
 RELEASE_URL="${LUMEN_RELEASE_URL:-$DEFAULT_RELEASE_URL}"
 ARCHIVE_NAME="$(basename "$RELEASE_URL")"
 
@@ -143,15 +143,18 @@ else
   download_release_binary
 fi
 
-LUMEND_SRC_RELATIVE="$(resolve_relative "$LUMEND_BIN" "$REPO_ROOT")"
+LUMEND_SRC_RELATIVE="lumend"
 D_RUNTIME_FILE="$LOCAL_RUNTIME_DOCKERFILE"
+BUILD_CONTEXT="$(mktemp -d)"
+cp "$LUMEND_BIN" "$BUILD_CONTEXT/$LUMEND_SRC_RELATIVE"
+cp "$D_RUNTIME_FILE" "$BUILD_CONTEXT/runtime.Dockerfile"
 
 echo "➤ Building Docker runtime image (${IMAGE_TAG})..."
-docker build \
+DOCKER_BUILDKIT=0 docker build \
   --build-arg LUMEND_SRC="./${LUMEND_SRC_RELATIVE}" \
   -t "$IMAGE_TAG" \
-  -f "$D_RUNTIME_FILE" \
-  "$REPO_ROOT" >/dev/null
+  -f "$BUILD_CONTEXT/runtime.Dockerfile" \
+  "$BUILD_CONTEXT" >/dev/null
 
 run_container() {
   docker run --rm \
