@@ -6,6 +6,7 @@ import type { LumenSigningClientOptions } from "./client/signing.js";
 import { LumenSigningClient } from "./client/signing.js";
 import { DnsModule, GatewaysModule, GovModule, ReleasesModule, TokenomicsModule } from "./modules/index.js";
 import type { EncodeObject } from "@cosmjs/proto-signing";
+import type { MsgUpdateSlashingDowntimeParams } from "./types/lumen/tokenomics/v1/tx.js";
 
 export class LumenSDK {
   constructor(public readonly client: LumenSigningClient) {}
@@ -134,6 +135,24 @@ export class LumenSDK {
 
   async voteWeightedOnProposal(voter: string, payload: Parameters<GovModule["msgVoteWeighted"]>[1]) {
     return this.broadcast(voter, [this.client.gov().msgVoteWeighted(voter, payload)]);
+  }
+
+  async updateSlashingDowntimeParams(
+    authority: string,
+    payload: Pick<
+      MsgUpdateSlashingDowntimeParams,
+      "slashFractionDowntime" | "downtimeJailDuration"
+    >,
+  ) {
+    return this.broadcast(authority, [
+      this.client
+        .tokenomics()
+        .msgUpdateSlashingDowntimeParams(
+          authority,
+          payload.slashFractionDowntime,
+          payload.downtimeJailDuration,
+        ),
+    ]);
   }
 
   private broadcast(sender: string, msgs: EncodeObject[]): Promise<DeliverTxResponse> {

@@ -34,7 +34,10 @@ import {
   MsgValidateRelease,
   MsgYankRelease,
 } from "./types/lumen/release/v1/tx.js";
-import { MsgUpdateParams as MsgTokenomicsUpdateParams } from "./types/lumen/tokenomics/v1/tx.js";
+import {
+  MsgUpdateParams as MsgTokenomicsUpdateParams,
+  MsgUpdateSlashingDowntimeParams,
+} from "./types/lumen/tokenomics/v1/tx.js";
 import { MsgLinkAccountPQC } from "./types/lumen/pqc/v1/tx.js";
 import {
   MsgSubmitProposal,
@@ -74,6 +77,10 @@ const customTypes: Array<[string, GeneratedType]> = [
   ["/lumen.release.v1.MsgRejectRelease", MsgRejectRelease as unknown as GeneratedType],
   ["/lumen.release.v1.MsgUpdateParams", MsgReleaseUpdateParams as unknown as GeneratedType],
   ["/lumen.tokenomics.v1.MsgUpdateParams", MsgTokenomicsUpdateParams as unknown as GeneratedType],
+  [
+    "/lumen.tokenomics.v1.MsgUpdateSlashingDowntimeParams",
+    MsgUpdateSlashingDowntimeParams as unknown as GeneratedType,
+  ],
   ["/lumen.pqc.v1.MsgLinkAccountPQC", MsgLinkAccountPQC as unknown as GeneratedType],
   ["/cosmos.gov.v1.MsgSubmitProposal", MsgSubmitProposal as unknown as GeneratedType],
   ["/cosmos.gov.v1.MsgDeposit", MsgDeposit as unknown as GeneratedType],

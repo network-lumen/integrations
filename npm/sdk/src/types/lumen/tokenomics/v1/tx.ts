@@ -18,6 +18,23 @@ export interface MsgUpdateParams {
 export interface MsgUpdateParamsResponse {
 }
 
+export interface MsgUpdateSlashingDowntimeParams {
+  authority: string;
+  /**
+   * slash_fraction_downtime is the desired new downtime slashing fraction,
+   * encoded as a decimal string, e.g. "0.01" for 1%.
+   */
+  slashFractionDowntime: string;
+  /**
+   * downtime_jail_duration is the desired jail duration for downtime,
+   * expressed as a Go duration string, e.g. "600s" or "1h".
+   */
+  downtimeJailDuration: string;
+}
+
+export interface MsgUpdateSlashingDowntimeParamsResponse {
+}
+
 function createBaseMsgUpdateParams(): MsgUpdateParams {
   return { authority: "", params: undefined };
 }
@@ -139,8 +156,152 @@ export const MsgUpdateParamsResponse: MessageFns<MsgUpdateParamsResponse> = {
   },
 };
 
+function createBaseMsgUpdateSlashingDowntimeParams(): MsgUpdateSlashingDowntimeParams {
+  return { authority: "", slashFractionDowntime: "", downtimeJailDuration: "" };
+}
+
+export const MsgUpdateSlashingDowntimeParams: MessageFns<MsgUpdateSlashingDowntimeParams> = {
+  encode(message: MsgUpdateSlashingDowntimeParams, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.authority !== "") {
+      writer.uint32(10).string(message.authority);
+    }
+    if (message.slashFractionDowntime !== "") {
+      writer.uint32(18).string(message.slashFractionDowntime);
+    }
+    if (message.downtimeJailDuration !== "") {
+      writer.uint32(26).string(message.downtimeJailDuration);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MsgUpdateSlashingDowntimeParams {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMsgUpdateSlashingDowntimeParams();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.authority = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.slashFractionDowntime = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.downtimeJailDuration = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): MsgUpdateSlashingDowntimeParams {
+    return {
+      authority: isSet(object.authority) ? globalThis.String(object.authority) : "",
+      slashFractionDowntime: isSet(object.slashFractionDowntime) ? globalThis.String(object.slashFractionDowntime) : "",
+      downtimeJailDuration: isSet(object.downtimeJailDuration) ? globalThis.String(object.downtimeJailDuration) : "",
+    };
+  },
+
+  toJSON(message: MsgUpdateSlashingDowntimeParams): unknown {
+    const obj: any = {};
+    if (message.authority !== "") {
+      obj.authority = message.authority;
+    }
+    if (message.slashFractionDowntime !== "") {
+      obj.slashFractionDowntime = message.slashFractionDowntime;
+    }
+    if (message.downtimeJailDuration !== "") {
+      obj.downtimeJailDuration = message.downtimeJailDuration;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MsgUpdateSlashingDowntimeParams>, I>>(base?: I): MsgUpdateSlashingDowntimeParams {
+    return MsgUpdateSlashingDowntimeParams.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MsgUpdateSlashingDowntimeParams>, I>>(
+    object: I,
+  ): MsgUpdateSlashingDowntimeParams {
+    const message = createBaseMsgUpdateSlashingDowntimeParams();
+    message.authority = object.authority ?? "";
+    message.slashFractionDowntime = object.slashFractionDowntime ?? "";
+    message.downtimeJailDuration = object.downtimeJailDuration ?? "";
+    return message;
+  },
+};
+
+function createBaseMsgUpdateSlashingDowntimeParamsResponse(): MsgUpdateSlashingDowntimeParamsResponse {
+  return {};
+}
+
+export const MsgUpdateSlashingDowntimeParamsResponse: MessageFns<MsgUpdateSlashingDowntimeParamsResponse> = {
+  encode(_: MsgUpdateSlashingDowntimeParamsResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MsgUpdateSlashingDowntimeParamsResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMsgUpdateSlashingDowntimeParamsResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): MsgUpdateSlashingDowntimeParamsResponse {
+    return {};
+  },
+
+  toJSON(_: MsgUpdateSlashingDowntimeParamsResponse): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MsgUpdateSlashingDowntimeParamsResponse>, I>>(
+    base?: I,
+  ): MsgUpdateSlashingDowntimeParamsResponse {
+    return MsgUpdateSlashingDowntimeParamsResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MsgUpdateSlashingDowntimeParamsResponse>, I>>(
+    _: I,
+  ): MsgUpdateSlashingDowntimeParamsResponse {
+    const message = createBaseMsgUpdateSlashingDowntimeParamsResponse();
+    return message;
+  },
+};
+
 export interface Msg {
   UpdateParams(request: MsgUpdateParams): Promise<MsgUpdateParamsResponse>;
+  UpdateSlashingDowntimeParams(
+    request: MsgUpdateSlashingDowntimeParams,
+  ): Promise<MsgUpdateSlashingDowntimeParamsResponse>;
 }
 
 export const MsgServiceName = "lumen.tokenomics.v1.Msg";
@@ -151,11 +312,20 @@ export class MsgClientImpl implements Msg {
     this.service = opts?.service || MsgServiceName;
     this.rpc = rpc;
     this.UpdateParams = this.UpdateParams.bind(this);
+    this.UpdateSlashingDowntimeParams = this.UpdateSlashingDowntimeParams.bind(this);
   }
   UpdateParams(request: MsgUpdateParams): Promise<MsgUpdateParamsResponse> {
     const data = MsgUpdateParams.encode(request).finish();
     const promise = this.rpc.request(this.service, "UpdateParams", data);
     return promise.then((data) => MsgUpdateParamsResponse.decode(new BinaryReader(data)));
+  }
+
+  UpdateSlashingDowntimeParams(
+    request: MsgUpdateSlashingDowntimeParams,
+  ): Promise<MsgUpdateSlashingDowntimeParamsResponse> {
+    const data = MsgUpdateSlashingDowntimeParams.encode(request).finish();
+    const promise = this.rpc.request(this.service, "UpdateSlashingDowntimeParams", data);
+    return promise.then((data) => MsgUpdateSlashingDowntimeParamsResponse.decode(new BinaryReader(data)));
   }
 }
 

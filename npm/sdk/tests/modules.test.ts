@@ -5,6 +5,7 @@ import { GatewaysModule } from "../src/modules/gateways.js";
 import { ReleasesModule } from "../src/modules/releases.js";
 import { TokenomicsModule } from "../src/modules/tokenomics.js";
 import { GovModule } from "../src/modules/gov.js";
+import { LumenSDK } from "../src/sdk.js";
 import { joinRest, withQuery } from "../src/rest.js";
 import type { Release } from "../src/types/lumen/release/v1/types.js";
 import { Release_ReleaseStatus } from "../src/types/lumen/release/v1/types.js";
@@ -177,6 +178,15 @@ describe("TokenomicsModule", () => {
     expect(msg.typeUrl).toBe("/lumen.tokenomics.v1.MsgUpdateParams");
     expect(msg.value.authority).toBe("authority");
   });
+
+  it("msgUpdateSlashingDowntimeParams", () => {
+    const module = new TokenomicsModule();
+    const msg = module.msgUpdateSlashingDowntimeParams("authority", "0.02", "600s");
+    expect(msg.typeUrl).toBe("/lumen.tokenomics.v1.MsgUpdateSlashingDowntimeParams");
+    expect(msg.value.authority).toBe("authority");
+    expect(msg.value.slashFractionDowntime).toBe("0.02");
+    expect(msg.value.downtimeJailDuration).toBe("600s");
+  });
 });
 
 describe("GovModule", () => {
@@ -218,5 +228,31 @@ describe("GovModule", () => {
     const msg = module.msgVote("addr", { proposalId: 12, option: VoteOption.VOTE_OPTION_YES });
     expect(msg.value.proposalId).toBe(12n);
     expect(msg.value.option).toBe(VoteOption.VOTE_OPTION_YES);
+  });
+});
+
+describe("LumenSDK tokenomics helpers", () => {
+  it("updateSlashingDowntimeParams delegates to module + broadcast", async () => {
+    const tokenomics = {
+      msgUpdateSlashingDowntimeParams: vi.fn(() => ({ typeUrl: "t", value: {} })),
+    };
+    const signAndBroadcast = vi.fn(async () => ({ transactionHash: "hash" }));
+    const client = {
+      tokenomics: () => tokenomics,
+      signAndBroadcast,
+    } as any;
+
+    const sdk = new LumenSDK(client);
+    await sdk.updateSlashingDowntimeParams("auth", {
+      slashFractionDowntime: "0.02",
+      downtimeJailDuration: "600s",
+    });
+
+    expect(tokenomics.msgUpdateSlashingDowntimeParams).toHaveBeenCalledWith(
+      "auth",
+      "0.02",
+      "600s",
+    );
+    expect(signAndBroadcast).toHaveBeenCalledWith("auth", [{ typeUrl: "t", value: {} }]);
   });
 });
