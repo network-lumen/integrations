@@ -5,6 +5,7 @@ import { joinRest } from "../rest.js";
 import {
   MsgUpdateParams,
   MsgUpdateSlashingDowntimeParams,
+  MsgUpdateSlashingLivenessParams,
 } from "../types/lumen/tokenomics/v1/tx.js";
 import type { Params } from "../types/lumen/tokenomics/v1/params.js";
 
@@ -36,6 +37,21 @@ export class TokenomicsModule extends BaseModule {
         authority,
         slashFractionDowntime,
         downtimeJailDuration,
+      }),
+    };
+  }
+
+  msgUpdateSlashingLivenessParams(
+    authority: string,
+    signedBlocksWindow: number,
+    minSignedPerWindow: string,
+  ): EncodeObject {
+    return {
+      typeUrl: "/lumen.tokenomics.v1.MsgUpdateSlashingLivenessParams",
+      value: MsgUpdateSlashingLivenessParams.fromPartial({
+        authority,
+        signedBlocksWindow,
+        minSignedPerWindow,
       }),
     };
   }

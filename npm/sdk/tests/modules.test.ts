@@ -187,6 +187,15 @@ describe("TokenomicsModule", () => {
     expect(msg.value.slashFractionDowntime).toBe("0.02");
     expect(msg.value.downtimeJailDuration).toBe("600s");
   });
+
+  it("msgUpdateSlashingLivenessParams", () => {
+    const module = new TokenomicsModule();
+    const msg = module.msgUpdateSlashingLivenessParams("authority", 123, "0.9");
+    expect(msg.typeUrl).toBe("/lumen.tokenomics.v1.MsgUpdateSlashingLivenessParams");
+    expect(msg.value.authority).toBe("authority");
+    expect(msg.value.signedBlocksWindow).toBe(123);
+    expect(msg.value.minSignedPerWindow).toBe("0.9");
+  });
 });
 
 describe("GovModule", () => {
