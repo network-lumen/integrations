@@ -2,9 +2,10 @@ import type { CID } from "multiformats/cid";
 
 export type TargetProtocol = "ipfs" | "ipns";
 export type GatewaySource = "custom" | "onchain" | "default";
-export type ContentKind = "file" | "directory" | "raw";
+export type ContentKind = "file" | "directory" | "raw" | "unknown";
 export type ChainConsistencyMode = "single" | "majority";
 export type DnsVerificationMode = "auto" | "rest" | "proof";
+export type ResolverTransport = "http" | "p2p";
 export type PrefetchStrategy = "file" | "shallow" | "recursive" | "adjacent";
 export type RpcErrorKind =
   | "network"
@@ -219,6 +220,10 @@ export interface ResolverCacheStore {
 }
 
 export interface ResolverOptions {
+  transport?: ResolverTransport;
+  httpFallback?: boolean;
+  p2pUseDelegatedRouting?: boolean;
+  p2pAttemptTimeoutMs?: number;
   restEndpoint?: string;
   restEndpoints?: Array<string | URL>;
   restTimeoutMs?: number;

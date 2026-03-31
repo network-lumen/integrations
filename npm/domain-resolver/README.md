@@ -14,7 +14,7 @@ The package is built for generic JavaScript and TypeScript usage:
 It uses:
 
 - `@lumen-chain/sdk` for on-chain DNS and gateway registry reads
-- `@helia/http`, `@helia/ipns`, and `@helia/unixfs` for trustless content retrieval
+- `helia`, `@helia/http`, `@helia/ipns`, and `@helia/unixfs` for trustless content retrieval over HTTP gateways or browser P2P
 - CometBFT RPC proofs plus validator signature checks for DNS proof mode
 
 That means content is checked against the resolved CID instead of blindly trusting a raw HTTP gateway response.
@@ -50,6 +50,9 @@ npm install @lumen-chain/domain-resolver
 import { createDomainResolver } from "@lumen-chain/domain-resolver";
 
 const resolver = createDomainResolver({
+  transport: "p2p",
+  httpFallback: true,
+  p2pAttemptTimeoutMs: 2500,
   restEndpoint: "https://rest.lumen.example",
   rpcEndpoint: "https://rpc.lumen.example",
   dnsVerificationMode: "proof",
@@ -109,6 +112,10 @@ await resolver.close()
 
 ```ts
 createDomainResolver({
+  transport: "p2p",
+  httpFallback: true,
+  p2pUseDelegatedRouting: true,
+  p2pAttemptTimeoutMs: 2500,
   restEndpoint: "https://rest.lumen.example",
   restEndpoints: [
     "https://rest-1.lumen.example",
@@ -189,6 +196,10 @@ createDomainResolver({
 
 ### Notes
 
+- `transport: "http"` uses trustless HTTP gateways via Helia HTTP.
+- `transport: "p2p"` uses Helia + libp2p in the browser or desktop runtime.
+- `httpFallback: true` keeps HTTP as an explicit secondary backend when P2P retrieval fails.
+- `p2pAttemptTimeoutMs` limits how long a single P2P content attempt can block before the resolver falls back to HTTP.
 - Domain inputs can include subdomain records such as `lumen.cosmos.directory`.
 - Direct `ipfs://`, `ipns://`, `/ipfs/...`, `/ipns/...`, and raw CID inputs are also supported.
 - `getFullContent` defaults to a shallow directory snapshot; pass `{ recursive: true }` to walk nested directories.

@@ -1,6 +1,8 @@
+import { bitswap } from "@helia/block-brokers";
+import { createHelia, heliaDefaults } from "helia";
 import { createHeliaHTTP } from "@helia/http";
 import { ipns, type IPNS } from "@helia/ipns";
-import { delegatedHTTPRouting, delegatedHTTPRoutingDefaults, httpGatewayRouting } from "@helia/routers";
+import { delegatedHTTPRouting, delegatedHTTPRoutingDefaults, httpGatewayRouting, libp2pRouting } from "@helia/routers";
 import { type UnixFS, unixfs } from "@helia/unixfs";
 import type { Helia } from "@helia/interface";
 import { LUMEN, modules } from "@lumen-chain/sdk";
@@ -37,6 +39,7 @@ import type {
   ResolverCacheRecord,
   ResolverCacheStore,
   ResolverOptions,
+  ResolverTransport,
 } from "./types.js";
 import {
   createDefaultCacheStore,
@@ -75,6 +78,7 @@ const DEFAULT_CONTENT_CACHE_MAX_ENTRIES = 256;
 const DEFAULT_CONTENT_CACHE_MAX_BYTES = 64 * 1024 * 1024;
 const DEFAULT_IPNS_RESOLVE_TIMEOUT_MS = 1_500;
 const DEFAULT_IPNS_FALLBACK_TTL_MS = 24 * 60 * 60 * 1000;
+const DEFAULT_P2P_ATTEMPT_TIMEOUT_MS = 3_000;
 const DEFAULT_CACHE_NAMESPACE = "domain-resolver";
 const DEFAULT_GATEWAY_SCORE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const DEFAULT_MAX_RECENT_EVENTS = 200;
@@ -102,6 +106,7 @@ type HeliaBundle = {
   helia: Helia;
   fs: UnixFS;
   ipnsApi: IPNS;
+  transport: ResolverTransport;
   gatewayKey: string;
 };
 
@@ -490,6 +495,10 @@ function parseStringResource(input: string): ParsedStringResource {
 }
 
 export class LumenDomainResolver {
+  private readonly transport: ResolverTransport;
+  private readonly httpFallback: boolean;
+  private readonly p2pUseDelegatedRouting: boolean;
+  private readonly p2pAttemptTimeoutMs: number;
   private readonly restEndpoint: string;
   private readonly restEndpoints: string[];
   private readonly restTimeoutMs: number;
@@ -537,10 +546,17 @@ export class LumenDomainResolver {
   private gatewayScorePersistPromise: Promise<void> | null = null;
   private trustStateLoadPromise: Promise<void> | null = null;
   private trustStatePersistPromise: Promise<void> | null = null;
-  private heliaBundle: HeliaBundle | null = null;
-  private heliaPromise: Promise<HeliaBundle> | null = null;
+  private readonly heliaBundles = new Map<string, HeliaBundle>();
+  private readonly heliaPromises = new Map<string, Promise<HeliaBundle>>();
 
   constructor(options: ResolverOptions = {}) {
+    this.transport = options.transport ?? "http";
+    this.httpFallback = options.httpFallback ?? false;
+    this.p2pUseDelegatedRouting = options.p2pUseDelegatedRouting ?? true;
+    this.p2pAttemptTimeoutMs = Math.max(
+      0,
+      options.p2pAttemptTimeoutMs ?? (this.httpFallback ? DEFAULT_P2P_ATTEMPT_TIMEOUT_MS : 0),
+    );
     const explicitEndpoints = normalizeRestEndpoints(options.restEndpoints ?? []);
     const singleEndpoint = options.restEndpoint ? normalizeRestEndpoints([options.restEndpoint]) : [];
     const explicitRpcEndpoints = normalizeRestEndpoints(options.rpcEndpoints ?? []);
@@ -941,7 +957,6 @@ export class LumenDomainResolver {
       forceRefresh: false,
     });
 
-    const { ipnsApi } = await this.getHelia(context.forceRefresh, context.gateways);
     const abortContext = createAbortContext({
       signal: context.signal,
       timeoutMs: this.ipnsResolveTimeoutMs,
@@ -949,10 +964,16 @@ export class LumenDomainResolver {
 
     try {
       const startedAt = now();
-      const resolved = await ipnsApi.resolve(keyCid as any, {
-        signal: abortContext.signal,
-        nocache: context.forceRefresh,
-      });
+      const resolved = await this.withContentBackend(
+        context.forceRefresh,
+        context.gateways,
+        context.signal,
+        async ({ ipnsApi }) =>
+          await ipnsApi.resolve(keyCid as any, {
+            signal: abortContext.signal,
+            nocache: context.forceRefresh,
+          }),
+      );
       const cachedPath = normalizeIpnsPath(resolved.path);
       const cachedValue: IpnsCacheValue = {
         cidString: resolved.cid.toString(),
@@ -1109,37 +1130,50 @@ export class LumenDomainResolver {
     }
   }
 
-  private async getHelia(forceRefresh: boolean, gateways?: GatewayCandidate[]): Promise<HeliaBundle> {
+  private async getHelia(
+    transport: ResolverTransport,
+    forceRefresh: boolean,
+    gateways?: GatewayCandidate[],
+  ): Promise<HeliaBundle> {
     const gatewayCandidates = gateways ?? await this.getGatewayCandidates(forceRefresh);
-    const nextGatewayKey = gatewayKeyFromCandidates(gatewayCandidates);
+    const cacheKey = this.getHeliaCacheKey(transport, gatewayCandidates);
 
-    if (forceRefresh || (this.heliaBundle && this.heliaBundle.gatewayKey !== nextGatewayKey)) {
-      await this.resetHelia();
+    if (forceRefresh) {
+      await this.resetHeliaBundle(cacheKey);
     }
 
-    if (this.heliaBundle) return this.heliaBundle;
-    if (this.heliaPromise) return this.heliaPromise;
+    await this.resetHeliaTransport(transport, cacheKey);
 
-    this.heliaPromise = this.createHeliaBundle(gatewayCandidates)
+    const existing = this.heliaBundles.get(cacheKey);
+    if (existing) return existing;
+
+    const inflight = this.heliaPromises.get(cacheKey);
+    if (inflight) return inflight;
+
+    const promise = this.createHeliaBundle(transport, gatewayCandidates)
       .then((bundle) => {
-        this.heliaBundle = bundle;
+        this.heliaBundles.set(cacheKey, bundle);
         return bundle;
       })
       .finally(() => {
-        this.heliaPromise = null;
+        this.heliaPromises.delete(cacheKey);
       });
 
-    return this.heliaPromise;
+    this.heliaPromises.set(cacheKey, promise);
+    return promise;
   }
 
-  private async createHeliaBundle(gateways: GatewayCandidate[]): Promise<HeliaBundle> {
-    const gatewayUrls = gateways.map((gateway) => gateway.url);
+  private getHeliaCacheKey(transport: ResolverTransport, gateways: GatewayCandidate[]): string {
+    return `${transport}:${gatewayKeyFromCandidates(gateways) || "default"}`;
+  }
+
+  private createDelegatedRouters() {
     const delegatedEndpoints = this.delegatedRoutingEndpoints
       .map((entry) => normalizeGatewayInput(entry, "default"))
       .filter((entry): entry is GatewayCandidate => entry != null)
       .map((entry) => entry.url);
 
-    const delegatedRouters = delegatedEndpoints.length
+    return delegatedEndpoints.length
       ? delegatedEndpoints.map((url) =>
           delegatedHTTPRouting({
             ...delegatedHTTPRoutingDefaults(),
@@ -1149,17 +1183,33 @@ export class LumenDomainResolver {
       : [
           delegatedHTTPRouting(delegatedHTTPRoutingDefaults()),
         ];
+  }
 
+  private createHttpBlockBroker(gateways: GatewayCandidate[]) {
+    const gatewayUrls = gateways.map((gateway) => gateway.url);
+    return createParallelGatewayBroker({
+      gateways: gatewayUrls,
+      requestCache: "force-cache",
+      rankGateways: (urls) => this.rankGatewayUrls(urls),
+      onGatewayResult: (event) => {
+        void this.handleGatewayResult(event);
+      },
+    });
+  }
+
+  private async createHeliaBundle(transport: ResolverTransport, gateways: GatewayCandidate[]): Promise<HeliaBundle> {
+    if (transport === "p2p") {
+      return this.createP2PHeliaBundle(gateways);
+    }
+    return this.createHttpHeliaBundle(gateways);
+  }
+
+  private async createHttpHeliaBundle(gateways: GatewayCandidate[]): Promise<HeliaBundle> {
+    const gatewayUrls = gateways.map((gateway) => gateway.url);
+    const delegatedRouters = this.createDelegatedRouters();
     const helia = await createHeliaHTTP({
       blockBrokers: [
-        createParallelGatewayBroker({
-          gateways: gatewayUrls,
-          requestCache: "force-cache",
-          rankGateways: (urls) => this.rankGatewayUrls(urls),
-          onGatewayResult: (event) => {
-            void this.handleGatewayResult(event);
-          },
-        }),
+        this.createHttpBlockBroker(gateways),
       ],
       routers: [
         ...delegatedRouters,
@@ -1173,27 +1223,134 @@ export class LumenDomainResolver {
     return {
       helia,
       fs: unixfs(helia),
-      ipnsApi: ipns(helia),
+      ipnsApi: ipns(helia as any),
+      transport: "http",
       gatewayKey: gatewayKeyFromCandidates(gateways),
     };
   }
 
-  private async resetHelia(): Promise<void> {
-    const bundle = this.heliaBundle ?? (this.heliaPromise ? await this.heliaPromise.catch(() => null) : null);
-    this.heliaBundle = null;
-    this.heliaPromise = null;
+  private async createP2PHeliaBundle(gateways: GatewayCandidate[]): Promise<HeliaBundle> {
+    const base = await heliaDefaults({
+      start: false,
+      blockBrokers: [bitswap()],
+    });
+    base.routers = [
+      libp2pRouting(base.libp2p),
+      ...(this.p2pUseDelegatedRouting ? this.createDelegatedRouters() : []),
+    ];
+
+    const helia = await createHelia(base);
+
+    return {
+      helia,
+      fs: unixfs(helia),
+      ipnsApi: ipns(helia as any),
+      transport: "p2p",
+      gatewayKey: gatewayKeyFromCandidates(gateways),
+    };
+  }
+
+  private async resetHeliaBundle(cacheKey: string): Promise<void> {
+    const bundle = this.heliaBundles.get(cacheKey) ??
+      (this.heliaPromises.has(cacheKey) ? await this.heliaPromises.get(cacheKey)!.catch(() => null) : null);
+    this.heliaBundles.delete(cacheKey);
+    this.heliaPromises.delete(cacheKey);
     if (bundle) {
       await bundle.helia.stop().catch(() => undefined);
     }
   }
 
-  private async statResolved(resolved: ResolvedResource, signal?: AbortSignal): Promise<ContentStat> {
-    const { fs } = await this.getHelia(false, resolved.gateways);
-    const path = toUnixfsPath(resolved.effectivePath);
-    const stat = await fs.stat(resolved.cidString as any, {
+  private async resetHeliaTransport(transport: ResolverTransport, keepCacheKey?: string): Promise<void> {
+    const knownKeys = new Set<string>([
+      ...this.heliaBundles.keys(),
+      ...this.heliaPromises.keys(),
+    ]);
+
+    for (const key of knownKeys) {
+      if (!key.startsWith(`${transport}:`)) continue;
+      if (keepCacheKey && key === keepCacheKey) continue;
+      await this.resetHeliaBundle(key);
+    }
+  }
+
+  private async resetHelia(): Promise<void> {
+    const knownKeys = new Set<string>([
+      ...this.heliaBundles.keys(),
+      ...this.heliaPromises.keys(),
+    ]);
+
+    for (const key of knownKeys) {
+      await this.resetHeliaBundle(key);
+    }
+  }
+
+  private contentTransports(): ResolverTransport[] {
+    return this.transport === "p2p" && this.httpFallback
+      ? ["p2p", "http"]
+      : [this.transport];
+  }
+
+  private createContentAbortContext(transport: ResolverTransport, signal?: AbortSignal): AbortContext {
+    const timeoutMs = transport === "p2p" && this.p2pAttemptTimeoutMs > 0
+      ? this.p2pAttemptTimeoutMs
+      : undefined;
+    return createAbortContext({
       signal,
-      ...(path ? { path } : {}),
+      timeoutMs,
     });
+  }
+
+  private normalizeContentTransportError(
+    transport: ResolverTransport,
+    abortContext: AbortContext,
+    error: unknown,
+  ): Error {
+    if (abortContext.timedOut()) {
+      return new Error(`${transport.toUpperCase()} content lookup timed out after ${this.p2pAttemptTimeoutMs}ms`);
+    }
+    return error instanceof Error ? error : new Error(String(error));
+  }
+
+  private async withContentBackend<T>(
+    forceRefresh: boolean,
+    gateways: GatewayCandidate[] | undefined,
+    signal: AbortSignal | undefined,
+    worker: (bundle: HeliaBundle, signal: AbortSignal | undefined) => Promise<T>,
+  ): Promise<T> {
+    let lastError: unknown = null;
+
+    for (const transport of this.contentTransports()) {
+      const abortContext = this.createContentAbortContext(transport, signal);
+      try {
+        const bundle = await this.getHelia(transport, forceRefresh, gateways);
+        return await worker(bundle, abortContext.signal);
+      } catch (error) {
+        if (signal?.aborted || abortContext.parentAborted()) throw error;
+        const transportError = this.normalizeContentTransportError(transport, abortContext, error);
+        lastError = transportError;
+        if (transport !== "p2p" || !this.httpFallback) {
+          throw transportError;
+        }
+      } finally {
+        abortContext.cleanup();
+      }
+    }
+
+    throw lastError instanceof Error ? lastError : new Error(String(lastError ?? "Unable to load content"));
+  }
+
+  private async statResolved(resolved: ResolvedResource, signal?: AbortSignal): Promise<ContentStat> {
+    const path = toUnixfsPath(resolved.effectivePath);
+    const stat = await this.withContentBackend(
+      false,
+      resolved.gateways,
+      signal,
+      async ({ fs }, attemptSignal) =>
+        await fs.stat(resolved.cidString as any, {
+          signal: attemptSignal,
+          ...(path ? { path } : {}),
+        }),
+    );
 
     return {
       resolved,
@@ -1206,27 +1363,33 @@ export class LumenDomainResolver {
   }
 
   private async lsResolved(resolved: ResolvedResource, options: ListOptions): Promise<ContentListEntry[]> {
-    const { fs } = await this.getHelia(false, resolved.gateways);
     const path = toUnixfsPath(resolved.effectivePath);
-    const entries: ContentListEntry[] = [];
+    return await this.withContentBackend(
+      false,
+      resolved.gateways,
+      options.signal,
+      async ({ fs }, attemptSignal) => {
+        const entries: ContentListEntry[] = [];
 
-    for await (const entry of fs.ls(resolved.cidString as any, {
-      signal: options.signal,
-      offset: options.offset,
-      length: options.length,
-      ...(path ? { path } : {}),
-    })) {
-      const name = String((entry as any).name ?? (entry as any).path ?? (entry as any).cid ?? "").trim();
-      entries.push({
-        name: name || String((entry as any).cid),
-        path: mergePaths(resolved.effectivePath, name),
-        cid: String((entry as any).cid),
-        kind: this.normalizeContentKind((entry as any).type),
-        sizeBytes: (entry as any).size != null ? String((entry as any).size) : undefined,
-      });
-    }
+        for await (const entry of fs.ls(resolved.cidString as any, {
+          signal: attemptSignal,
+          offset: options.offset,
+          length: options.length,
+          ...(path ? { path } : {}),
+        })) {
+          const name = String((entry as any).name ?? (entry as any).path ?? (entry as any).cid ?? "").trim();
+          entries.push({
+            name: name || String((entry as any).cid),
+            path: mergePaths(resolved.effectivePath, name),
+            cid: String((entry as any).cid),
+            kind: this.normalizeContentKind((entry as any).type),
+            sizeBytes: (entry as any).size != null ? String((entry as any).size) : undefined,
+          });
+        }
 
-    return entries;
+        return entries;
+      },
+    );
   }
 
   private async *readStreamResolved(
@@ -1271,47 +1434,71 @@ export class LumenDomainResolver {
       throw new Error(`Cannot read bytes from directory path "${resolved.effectivePath}"`);
     }
 
-    const { fs } = await this.getHelia(false, resolved.gateways);
     const path = toUnixfsPath(resolved.effectivePath);
-    const chunks: Uint8Array[] = [];
-    let total = 0;
-    let canCache = cacheEligible;
+    let lastError: unknown = null;
 
-    this.emitEvent("content_stream", {
-      path: resolved.effectivePath,
-      cid: resolved.cidString,
-      source: "network",
-      offset: options.offset,
-      length: options.length,
-    });
+    for (const transport of this.contentTransports()) {
+      const abortContext = this.createContentAbortContext(transport, options.signal);
+      const chunks: Uint8Array[] = [];
+      let total = 0;
+      let canCache = cacheEligible;
+      let yieldedAny = false;
 
-    for await (const chunk of fs.cat(resolved.cidString as any, {
-      signal: options.signal,
-      offset: options.offset,
-      length: options.length,
-      ...(path ? { path } : {}),
-    })) {
-      total += chunk.byteLength;
-      if (options.maxBytes != null && total > options.maxBytes) {
-        throw new Error(`Content exceeds maxBytes limit (${options.maxBytes})`);
-      }
+      try {
+        const { fs } = await this.getHelia(transport, false, resolved.gateways);
+        this.emitEvent("content_stream", {
+          path: resolved.effectivePath,
+          cid: resolved.cidString,
+          source: "network",
+          transport,
+          offset: options.offset,
+          length: options.length,
+        });
 
-      if (canCache) {
-        if (total <= this.contentCacheMaxBytes) {
-          chunks.push(chunk);
-        } else {
-          canCache = false;
-          chunks.length = 0;
+        for await (const chunk of fs.cat(resolved.cidString as any, {
+          signal: abortContext.signal,
+          offset: options.offset,
+          length: options.length,
+          ...(path ? { path } : {}),
+        })) {
+          yieldedAny = true;
+          total += chunk.byteLength;
+          if (options.maxBytes != null && total > options.maxBytes) {
+            throw new Error(`Content exceeds maxBytes limit (${options.maxBytes})`);
+          }
+
+          if (canCache) {
+            if (total <= this.contentCacheMaxBytes) {
+              chunks.push(chunk);
+            } else {
+              canCache = false;
+              chunks.length = 0;
+            }
+          }
+
+          yield chunk;
         }
+
+        if (canCache && chunks.length) {
+          const bytes = concatChunks(chunks);
+          await this.setContentCacheValue(contentCacheKey(resolved), bytes);
+        }
+        return;
+      } catch (error) {
+        if (options.signal?.aborted || abortContext.parentAborted() || yieldedAny) {
+          throw error;
+        }
+        const transportError = this.normalizeContentTransportError(transport, abortContext, error);
+        lastError = transportError;
+        if (transport !== "p2p" || !this.httpFallback) {
+          throw transportError;
+        }
+      } finally {
+        abortContext.cleanup();
       }
-
-      yield chunk;
     }
 
-    if (canCache && chunks.length) {
-      const bytes = concatChunks(chunks);
-      await this.setContentCacheValue(contentCacheKey(resolved), bytes);
-    }
+    throw lastError instanceof Error ? lastError : new Error(String(lastError ?? "Unable to stream content"));
   }
 
   private async readBytesResolved(resolved: ResolvedResource, options: ReadBytesOptions): Promise<Uint8Array> {
@@ -2059,6 +2246,7 @@ export class LumenDomainResolver {
     const normalized = String(type ?? "").trim().toLowerCase();
     if (normalized === "directory") return "directory";
     if (normalized === "raw") return "raw";
+    if (!normalized) return "unknown";
     return "file";
   }
 }
