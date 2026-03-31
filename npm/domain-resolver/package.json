@@ -1,0 +1,58 @@
+{
+  "name": "@lumen-chain/domain-resolver",
+  "version": "0.1.0",
+  "description": "Trustless Lumen domain resolver for IPFS/IPNS content using Helia over HTTP.",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "clean": "rimraf dist",
+    "dev": "tsup --watch",
+    "lint": "tsc --noEmit",
+    "test": "vitest run",
+    "prepare": "npm run build"
+  },
+  "keywords": [
+    "lumen",
+    "ipfs",
+    "ipns",
+    "helia",
+    "resolver",
+    "typescript"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@confio/ics23": "^0.6.8",
+    "@cosmjs/crypto": "^0.33.1",
+    "@cosmjs/tendermint-rpc": "^0.33.1",
+    "@helia/block-brokers": "^5.1.4",
+    "@helia/http": "^3.0.22",
+    "@helia/ipns": "^9.1.9",
+    "@helia/routers": "^5.0.3",
+    "@helia/unixfs": "^7.1.0",
+    "@lumen-chain/sdk": "^1.4.1",
+    "multiformats": "^13.4.2",
+    "protobufjs": "^7.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.15",
+    "rimraf": "^5.0.5",
+    "tsup": "^8.0.0",
+    "typescript": "^5.5.4",
+    "vitest": "^1.6.0"
+  }
+}
