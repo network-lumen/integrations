@@ -52,7 +52,7 @@
     "@libp2p/webrtc": "^6.0.15",
     "@libp2p/websockets": "^10.1.7",
     "@libp2p/webtransport": "^6.0.16",
-    "@lumen-chain/sdk": "^1.4.1",
+    "@lumen-chain/sdk": "^1.6.0",
     "helia": "^6.0.22",
     "multiformats": "^13.4.2",
     "protobufjs": "^7.4.0"
