@@ -1,6 +1,6 @@
 {
   "name": "@lumen-chain/domain-resolver",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Trustless Lumen domain resolver for IPFS/IPNS content using Helia over HTTP or browser P2P.",
   "type": "module",
   "main": "dist/index.js",
