@@ -4,6 +4,7 @@ import { DnsModule } from "../src/modules/dns.js";
 import { GatewaysModule } from "../src/modules/gateways.js";
 import { ReleasesModule } from "../src/modules/releases.js";
 import { TokenomicsModule } from "../src/modules/tokenomics.js";
+import { PqcModule } from "../src/modules/pqc.js";
 import { GovModule } from "../src/modules/gov.js";
 import { LumenSDK } from "../src/sdk.js";
 import { joinRest, withQuery } from "../src/rest.js";
@@ -65,18 +66,6 @@ describe("DnsModule", () => {
     expect(msg.typeUrl).toBe("/lumen.dns.v1.MsgRegister");
     expect(msg.value.domain).toBe("foo");
     expect(msg.value.durationDays).toBe(10);
-  });
-
-  it("msgCreateAuction sets defaults", () => {
-    const msg = module.msgCreateAuction("addr", {
-      index: "foo.lmn",
-      name: "foo.lmn",
-      start: 1,
-      end: 2,
-    });
-    expect(msg.value.start).toBe(1);
-    expect(msg.value.end).toBe(2);
-    expect(msg.value.highestBid).toBe("");
   });
 
   it("params exposes update_fee_ulmn", async () => {
@@ -179,6 +168,24 @@ describe("TokenomicsModule", () => {
     expect(msg.value.authority).toBe("authority");
   });
 
+  it("msgUpdateGovMinDeposit", () => {
+    const module = new TokenomicsModule();
+    const msg = module.msgUpdateGovMinDeposit("authority", [{ denom: "ulmn", amount: "100000000" }]);
+    expect(msg.typeUrl).toBe("/lumen.tokenomics.v1.MsgUpdateGovMinDeposit");
+    expect(msg.value.minDeposit).toEqual([{ denom: "ulmn", amount: "100000000" }]);
+  });
+
+  it("msgCommunityPoolSpend", () => {
+    const module = new TokenomicsModule();
+    const msg = module.msgCommunityPoolSpend("authority", {
+      recipient: "lmn1recipientxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      amount: [{ denom: "ulmn", amount: "42" }],
+    });
+    expect(msg.typeUrl).toBe("/lumen.tokenomics.v1.MsgCommunityPoolSpend");
+    expect(msg.value.recipient).toBe("lmn1recipientxxxxxxxxxxxxxxxxxxxxxxxxxx");
+    expect(msg.value.amount).toEqual([{ denom: "ulmn", amount: "42" }]);
+  });
+
   it("msgUpdateSlashingDowntimeParams", () => {
     const module = new TokenomicsModule();
     const msg = module.msgUpdateSlashingDowntimeParams("authority", "0.02", "600s");
@@ -195,6 +202,35 @@ describe("TokenomicsModule", () => {
     expect(msg.value.authority).toBe("authority");
     expect(msg.value.signedBlocksWindow).toBe(123);
     expect(msg.value.minSignedPerWindow).toBe("0.9");
+  });
+});
+
+describe("PqcModule", () => {
+  it("msgUpdateParams", () => {
+    const module = new PqcModule();
+    const msg = module.msgUpdateParams("authority", {
+      policy: 2,
+      minScheme: "dilithium3",
+      powDifficultyBits: 20,
+      ibcRelayerAllowlist: ["lmn1relayerxxxxxxxxxxxxxxxxxxxxxxxxx"],
+    } as any);
+    expect(msg.typeUrl).toBe("/lumen.pqc.v1.MsgUpdateParams");
+    expect(msg.value.authority).toBe("authority");
+    expect(msg.value.params?.ibcRelayerAllowlist).toEqual(["lmn1relayerxxxxxxxxxxxxxxxxxxxxxxxxx"]);
+  });
+
+  it("msgAddIbcRelayer", () => {
+    const module = new PqcModule();
+    const msg = module.msgAddIbcRelayer("authority", "lmn1relayerxxxxxxxxxxxxxxxxxxxxxxxxx");
+    expect(msg.typeUrl).toBe("/lumen.pqc.v1.MsgAddIBCRelayer");
+    expect(msg.value.relayer).toBe("lmn1relayerxxxxxxxxxxxxxxxxxxxxxxxxx");
+  });
+
+  it("msgRemoveIbcRelayer", () => {
+    const module = new PqcModule();
+    const msg = module.msgRemoveIbcRelayer("authority", "lmn1relayerxxxxxxxxxxxxxxxxxxxxxxxxx");
+    expect(msg.typeUrl).toBe("/lumen.pqc.v1.MsgRemoveIBCRelayer");
+    expect(msg.value.relayer).toBe("lmn1relayerxxxxxxxxxxxxxxxxxxxxxxxxx");
   });
 });
 
@@ -263,5 +299,39 @@ describe("LumenSDK tokenomics helpers", () => {
       "600s",
     );
     expect(signAndBroadcast).toHaveBeenCalledWith("auth", [{ typeUrl: "t", value: {} }]);
+  });
+
+  it("updateGovMinDeposit delegates to module + broadcast", async () => {
+    const tokenomics = {
+      msgUpdateGovMinDeposit: vi.fn(() => ({ typeUrl: "gov-min", value: {} })),
+    };
+    const signAndBroadcast = vi.fn(async () => ({ transactionHash: "hash" }));
+    const client = {
+      tokenomics: () => tokenomics,
+      signAndBroadcast,
+    } as any;
+
+    const sdk = new LumenSDK(client);
+    await sdk.updateGovMinDeposit("auth", [{ denom: "ulmn", amount: "100000000" }]);
+
+    expect(tokenomics.msgUpdateGovMinDeposit).toHaveBeenCalledWith("auth", [{ denom: "ulmn", amount: "100000000" }]);
+    expect(signAndBroadcast).toHaveBeenCalledWith("auth", [{ typeUrl: "gov-min", value: {} }]);
+  });
+
+  it("addIbcRelayer delegates to module + broadcast", async () => {
+    const pqc = {
+      msgAddIbcRelayer: vi.fn(() => ({ typeUrl: "pqc-add", value: {} })),
+    };
+    const signAndBroadcast = vi.fn(async () => ({ transactionHash: "hash" }));
+    const client = {
+      pqc: () => pqc,
+      signAndBroadcast,
+    } as any;
+
+    const sdk = new LumenSDK(client);
+    await sdk.addIbcRelayer("auth", "lmn1relayerxxxxxxxxxxxxxxxxxxxxxxxxx");
+
+    expect(pqc.msgAddIbcRelayer).toHaveBeenCalledWith("auth", "lmn1relayerxxxxxxxxxxxxxxxxxxxxxxxxx");
+    expect(signAndBroadcast).toHaveBeenCalledWith("auth", [{ typeUrl: "pqc-add", value: {} }]);
   });
 });

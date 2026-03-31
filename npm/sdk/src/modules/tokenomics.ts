@@ -3,10 +3,13 @@ import type { EncodeObject } from "@cosmjs/proto-signing";
 import { BaseModule } from "./base.js";
 import { joinRest } from "../rest.js";
 import {
+  MsgCommunityPoolSpend,
+  MsgUpdateGovMinDeposit,
   MsgUpdateParams,
   MsgUpdateSlashingDowntimeParams,
   MsgUpdateSlashingLivenessParams,
 } from "../types/lumen/tokenomics/v1/tx.js";
+import type { Coin } from "../types/cosmos/base/v1beta1/coin.js";
 import type { Params } from "../types/lumen/tokenomics/v1/params.js";
 
 export class TokenomicsModule extends BaseModule {
@@ -23,6 +26,24 @@ export class TokenomicsModule extends BaseModule {
     return {
       typeUrl: "/lumen.tokenomics.v1.MsgUpdateParams",
       value: MsgUpdateParams.fromPartial({ authority, params }),
+    };
+  }
+
+  msgUpdateGovMinDeposit(authority: string, minDeposit: Coin[]): EncodeObject {
+    return {
+      typeUrl: "/lumen.tokenomics.v1.MsgUpdateGovMinDeposit",
+      value: MsgUpdateGovMinDeposit.fromPartial({ authority, minDeposit }),
+    };
+  }
+
+  msgCommunityPoolSpend(authority: string, payload: { recipient: string; amount: Coin[] }): EncodeObject {
+    return {
+      typeUrl: "/lumen.tokenomics.v1.MsgCommunityPoolSpend",
+      value: MsgCommunityPoolSpend.fromPartial({
+        authority,
+        recipient: payload.recipient,
+        amount: payload.amount,
+      }),
     };
   }
 

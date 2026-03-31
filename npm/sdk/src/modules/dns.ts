@@ -4,17 +4,11 @@ import { BaseModule } from "./base.js";
 import { joinRest } from "../rest.js";
 import {
   MsgBid,
-  MsgCreateAuction,
-  MsgCreateDomain,
-  MsgDeleteAuction,
-  MsgDeleteDomain,
   MsgRegister,
   MsgRenew,
   MsgSettle,
   MsgTransfer,
   MsgUpdate,
-  MsgUpdateAuction,
-  MsgUpdateDomain,
   MsgUpdateParams,
 } from "../types/lumen/dns/v1/tx.js";
 import type { Record as DnsRecord } from "../types/lumen/dns/v1/domain.js";
@@ -193,112 +187,6 @@ export class DnsModule extends BaseModule {
         creator: sender,
         domain: payload.domain,
         ext: payload.ext,
-      }),
-    };
-  }
-
-  msgCreateDomain(sender: string, payload: {
-    index: string;
-    name: string;
-    owner: string;
-    records?: DnsRecord[];
-    expireAt?: number;
-  }): EncodeObject {
-    return {
-      typeUrl: "/lumen.dns.v1.MsgCreateDomain",
-      value: MsgCreateDomain.fromPartial({
-        creator: sender,
-        index: payload.index,
-        name: payload.name,
-        owner: payload.owner,
-        records: payload.records ?? [],
-        expireAt: payload.expireAt ?? 0,
-      }),
-    };
-  }
-
-  msgUpdateDomain(sender: string, payload: {
-    index: string;
-    name: string;
-    owner: string;
-    records?: DnsRecord[];
-    expireAt?: number;
-    powNonce?: number;
-  }): EncodeObject {
-    return {
-      typeUrl: "/lumen.dns.v1.MsgUpdateDomain",
-      value: MsgUpdateDomain.fromPartial({
-        creator: sender,
-        index: payload.index,
-        name: payload.name,
-        owner: payload.owner,
-        records: payload.records ?? [],
-        expireAt: payload.expireAt ?? 0,
-        powNonce: payload.powNonce ?? 0,
-      }),
-    };
-  }
-
-  msgDeleteDomain(sender: string, payload: { index: string }): EncodeObject {
-    return {
-      typeUrl: "/lumen.dns.v1.MsgDeleteDomain",
-      value: MsgDeleteDomain.fromPartial({
-        creator: sender,
-        index: payload.index,
-      }),
-    };
-  }
-
-  msgCreateAuction(sender: string, payload: {
-    index: string;
-    name: string;
-    start: number | string;
-    end: number | string;
-    highestBid?: string;
-    bidder?: string;
-  }): EncodeObject {
-    return {
-      typeUrl: "/lumen.dns.v1.MsgCreateAuction",
-      value: MsgCreateAuction.fromPartial({
-        creator: sender,
-        index: payload.index,
-        name: payload.name,
-        start: Number(payload.start),
-        end: Number(payload.end),
-        highestBid: payload.highestBid ?? "",
-        bidder: payload.bidder ?? "",
-      }),
-    };
-  }
-
-  msgUpdateAuction(sender: string, payload: {
-    index: string;
-    name: string;
-    start?: number | string;
-    end?: number | string;
-    highestBid?: string;
-    bidder?: string;
-  }): EncodeObject {
-    return {
-      typeUrl: "/lumen.dns.v1.MsgUpdateAuction",
-      value: MsgUpdateAuction.fromPartial({
-        creator: sender,
-        index: payload.index,
-        name: payload.name,
-        start: payload.start != null ? Number(payload.start) : undefined,
-        end: payload.end != null ? Number(payload.end) : undefined,
-        highestBid: payload.highestBid ?? "",
-        bidder: payload.bidder ?? "",
-      }),
-    };
-  }
-
-  msgDeleteAuction(sender: string, payload: { index: string }): EncodeObject {
-    return {
-      typeUrl: "/lumen.dns.v1.MsgDeleteAuction",
-      value: MsgDeleteAuction.fromPartial({
-        creator: sender,
-        index: payload.index,
       }),
     };
   }

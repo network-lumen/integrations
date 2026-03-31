@@ -3,17 +3,11 @@ import { defaultRegistryTypes } from "@cosmjs/stargate";
 
 import {
   MsgBid,
-  MsgCreateAuction,
-  MsgCreateDomain,
-  MsgDeleteAuction,
-  MsgDeleteDomain,
   MsgRegister as MsgDnsRegister,
   MsgRenew,
   MsgSettle,
   MsgTransfer,
   MsgUpdate as MsgDnsUpdate,
-  MsgUpdateAuction,
-  MsgUpdateDomain,
   MsgUpdateParams as MsgDnsUpdateParams,
 } from "./types/lumen/dns/v1/tx.js";
 import {
@@ -26,20 +20,25 @@ import {
   MsgUpdateParams as MsgGatewayUpdateParams,
 } from "./types/lumen/gateway/v1/tx.js";
 import {
-  MsgMirrorRelease,
   MsgPublishRelease,
   MsgRejectRelease,
   MsgSetEmergency,
   MsgUpdateParams as MsgReleaseUpdateParams,
   MsgValidateRelease,
-  MsgYankRelease,
 } from "./types/lumen/release/v1/tx.js";
 import {
+  MsgCommunityPoolSpend,
+  MsgUpdateGovMinDeposit,
   MsgUpdateParams as MsgTokenomicsUpdateParams,
   MsgUpdateSlashingDowntimeParams,
   MsgUpdateSlashingLivenessParams,
 } from "./types/lumen/tokenomics/v1/tx.js";
-import { MsgLinkAccountPQC } from "./types/lumen/pqc/v1/tx.js";
+import {
+  MsgAddIBCRelayer,
+  MsgLinkAccountPQC,
+  MsgRemoveIBCRelayer,
+  MsgUpdateParams as MsgPqcUpdateParams,
+} from "./types/lumen/pqc/v1/tx.js";
 import {
   MsgSubmitProposal,
   MsgVote,
@@ -58,12 +57,6 @@ const customTypes: Array<[string, GeneratedType]> = [
   ["/lumen.dns.v1.MsgTransfer", MsgTransfer as unknown as GeneratedType],
   ["/lumen.dns.v1.MsgBid", MsgBid as unknown as GeneratedType],
   ["/lumen.dns.v1.MsgSettle", MsgSettle as unknown as GeneratedType],
-  ["/lumen.dns.v1.MsgCreateDomain", MsgCreateDomain as unknown as GeneratedType],
-  ["/lumen.dns.v1.MsgUpdateDomain", MsgUpdateDomain as unknown as GeneratedType],
-  ["/lumen.dns.v1.MsgDeleteDomain", MsgDeleteDomain as unknown as GeneratedType],
-  ["/lumen.dns.v1.MsgCreateAuction", MsgCreateAuction as unknown as GeneratedType],
-  ["/lumen.dns.v1.MsgUpdateAuction", MsgUpdateAuction as unknown as GeneratedType],
-  ["/lumen.dns.v1.MsgDeleteAuction", MsgDeleteAuction as unknown as GeneratedType],
   ["/lumen.gateway.v1.MsgUpdateParams", MsgGatewayUpdateParams as unknown as GeneratedType],
   ["/lumen.gateway.v1.MsgRegisterGateway", MsgRegisterGateway as unknown as GeneratedType],
   ["/lumen.gateway.v1.MsgUpdateGateway", MsgUpdateGateway as unknown as GeneratedType],
@@ -72,13 +65,13 @@ const customTypes: Array<[string, GeneratedType]> = [
   ["/lumen.gateway.v1.MsgCancelContract", MsgCancelContract as unknown as GeneratedType],
   ["/lumen.gateway.v1.MsgFinalizeContract", MsgFinalizeContract as unknown as GeneratedType],
   ["/lumen.release.v1.MsgPublishRelease", MsgPublishRelease as unknown as GeneratedType],
-  ["/lumen.release.v1.MsgMirrorRelease", MsgMirrorRelease as unknown as GeneratedType],
-  ["/lumen.release.v1.MsgYankRelease", MsgYankRelease as unknown as GeneratedType],
   ["/lumen.release.v1.MsgSetEmergency", MsgSetEmergency as unknown as GeneratedType],
   ["/lumen.release.v1.MsgValidateRelease", MsgValidateRelease as unknown as GeneratedType],
   ["/lumen.release.v1.MsgRejectRelease", MsgRejectRelease as unknown as GeneratedType],
   ["/lumen.release.v1.MsgUpdateParams", MsgReleaseUpdateParams as unknown as GeneratedType],
   ["/lumen.tokenomics.v1.MsgUpdateParams", MsgTokenomicsUpdateParams as unknown as GeneratedType],
+  ["/lumen.tokenomics.v1.MsgUpdateGovMinDeposit", MsgUpdateGovMinDeposit as unknown as GeneratedType],
+  ["/lumen.tokenomics.v1.MsgCommunityPoolSpend", MsgCommunityPoolSpend as unknown as GeneratedType],
   [
     "/lumen.tokenomics.v1.MsgUpdateSlashingDowntimeParams",
     MsgUpdateSlashingDowntimeParams as unknown as GeneratedType,
@@ -87,6 +80,9 @@ const customTypes: Array<[string, GeneratedType]> = [
     "/lumen.tokenomics.v1.MsgUpdateSlashingLivenessParams",
     MsgUpdateSlashingLivenessParams as unknown as GeneratedType,
   ],
+  ["/lumen.pqc.v1.MsgUpdateParams", MsgPqcUpdateParams as unknown as GeneratedType],
+  ["/lumen.pqc.v1.MsgAddIBCRelayer", MsgAddIBCRelayer as unknown as GeneratedType],
+  ["/lumen.pqc.v1.MsgRemoveIBCRelayer", MsgRemoveIBCRelayer as unknown as GeneratedType],
   ["/lumen.pqc.v1.MsgLinkAccountPQC", MsgLinkAccountPQC as unknown as GeneratedType],
   ["/cosmos.gov.v1.MsgSubmitProposal", MsgSubmitProposal as unknown as GeneratedType],
   ["/cosmos.gov.v1.MsgDeposit", MsgDeposit as unknown as GeneratedType],

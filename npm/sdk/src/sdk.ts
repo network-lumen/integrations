@@ -4,8 +4,9 @@ import type { DeliverTxResponse } from "@cosmjs/stargate";
 import type { LumenEndpoints } from "./constants.js";
 import type { LumenSigningClientOptions } from "./client/signing.js";
 import { LumenSigningClient } from "./client/signing.js";
-import { DnsModule, GatewaysModule, GovModule, ReleasesModule, TokenomicsModule } from "./modules/index.js";
+import { DnsModule, GatewaysModule, GovModule, PqcModule, ReleasesModule, TokenomicsModule } from "./modules/index.js";
 import type { EncodeObject } from "@cosmjs/proto-signing";
+import type { Coin } from "./types/cosmos/base/v1beta1/coin.js";
 import type {
   MsgUpdateSlashingDowntimeParams,
   MsgUpdateSlashingLivenessParams,
@@ -41,6 +42,10 @@ export class LumenSDK {
 
   gov(): GovModule {
     return this.client.gov();
+  }
+
+  pqc(): PqcModule {
+    return this.client.pqc();
   }
 
   async getAccountSnapshot(address: string) {
@@ -104,14 +109,6 @@ export class LumenSDK {
     return this.broadcast(creator, [this.client.releases().msgPublishRelease(creator, payload)]);
   }
 
-  async mirrorRelease(creator: string, payload: Parameters<ReleasesModule["msgMirrorRelease"]>[1]) {
-    return this.broadcast(creator, [this.client.releases().msgMirrorRelease(creator, payload)]);
-  }
-
-  async yankRelease(creator: string, id: number) {
-    return this.broadcast(creator, [this.client.releases().msgYankRelease(creator, id)]);
-  }
-
   async validateRelease(authority: string, id: number) {
     return this.broadcast(authority, [this.client.releases().msgValidateRelease(authority, id)]);
   }
@@ -122,6 +119,14 @@ export class LumenSDK {
 
   async updateTokenomics(authority: string, params: Parameters<TokenomicsModule["msgUpdateParams"]>[1]) {
     return this.broadcast(authority, [this.client.tokenomics().msgUpdateParams(authority, params)]);
+  }
+
+  async updateGovMinDeposit(authority: string, minDeposit: Coin[]) {
+    return this.broadcast(authority, [this.client.tokenomics().msgUpdateGovMinDeposit(authority, minDeposit)]);
+  }
+
+  async communityPoolSpend(authority: string, payload: Parameters<TokenomicsModule["msgCommunityPoolSpend"]>[1]) {
+    return this.broadcast(authority, [this.client.tokenomics().msgCommunityPoolSpend(authority, payload)]);
   }
 
   async submitProposal(proposer: string, payload: Parameters<GovModule["msgSubmitProposal"]>[1]) {
@@ -170,6 +175,22 @@ export class LumenSDK {
         .tokenomics()
         .msgUpdateSlashingLivenessParams(authority, payload.signedBlocksWindow, payload.minSignedPerWindow),
     ]);
+  }
+
+  async updatePqcParams(authority: string, params: Parameters<PqcModule["msgUpdateParams"]>[1]) {
+    return this.broadcast(authority, [this.client.pqc().msgUpdateParams(authority, params)]);
+  }
+
+  async addIbcRelayer(authority: string, relayer: string) {
+    return this.broadcast(authority, [this.client.pqc().msgAddIbcRelayer(authority, relayer)]);
+  }
+
+  async removeIbcRelayer(authority: string, relayer: string) {
+    return this.broadcast(authority, [this.client.pqc().msgRemoveIbcRelayer(authority, relayer)]);
+  }
+
+  async linkAccountPqc(sender: string, payload: Parameters<PqcModule["msgLinkAccountPqc"]>[1]) {
+    return this.broadcast(sender, [this.client.pqc().msgLinkAccountPqc(sender, payload)]);
   }
 
   private broadcast(sender: string, msgs: EncodeObject[]): Promise<DeliverTxResponse> {

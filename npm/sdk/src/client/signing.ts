@@ -254,5 +254,6 @@ function parseParams(input: any): PqcParams | undefined {
     minScheme: input.minScheme ?? input.min_scheme ?? "",
     minBalanceForLink: input.minBalanceForLink ?? input.min_balance_for_link,
     powDifficultyBits: Number(input.powDifficultyBits ?? input.pow_difficulty_bits ?? 0),
+    ibcRelayerAllowlist: input.ibcRelayerAllowlist ?? input.ibc_relayer_allowlist ?? [],
   };
 }

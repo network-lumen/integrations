@@ -91,9 +91,15 @@ This compiles the WASM into `integrations/utils/pqc-wasm/dist/` and syncs it bac
 - `client.{dns,gateways,releases,tokenomics,gov,pqc}()` expose REST queries plus tx composers (EncodeObjects ready for cosmjs).
 - Tokenomics helpers:
   - `client.tokenomics().msgUpdateParams(authority, params)` updates soft tokenomics knobs (tax rate, min send, distribution interval).
+  - `client.tokenomics().msgUpdateGovMinDeposit(authority, minDeposit)` updates the governance minimum deposit coin set.
+  - `client.tokenomics().msgCommunityPoolSpend(authority, { recipient, amount })` submits a community-pool spend message.
   - `client.tokenomics().msgUpdateSlashingDowntimeParams(authority, slashFractionDowntime, downtimeJailDuration)` updates only the **downtime** slashing fraction and jail duration (double-sign slashing stays fixed at 10% on-chain).
   - `client.tokenomics().msgUpdateSlashingLivenessParams(authority, signedBlocksWindow, minSignedPerWindow)` updates slashing liveness controls (signed blocks window + min signed ratio).
-  - High-level helpers `sdk.updateTokenomics(...)`, `sdk.updateSlashingDowntimeParams(...)`, and `sdk.updateSlashingLivenessParams(...)` wrap these messages and broadcast them.
+  - High-level helpers `sdk.updateTokenomics(...)`, `sdk.updateGovMinDeposit(...)`, `sdk.communityPoolSpend(...)`, `sdk.updateSlashingDowntimeParams(...)`, and `sdk.updateSlashingLivenessParams(...)` wrap these messages and broadcast them.
+- PQC helpers:
+  - `client.pqc().msgUpdateParams(authority, params)` updates the module parameters, including `ibcRelayerAllowlist`.
+  - `client.pqc().msgAddIbcRelayer(authority, relayer)` and `client.pqc().msgRemoveIbcRelayer(authority, relayer)` maintain the IBC relayer allowlist.
+  - High-level helpers `sdk.updatePqcParams(...)`, `sdk.addIbcRelayer(...)`, `sdk.removeIbcRelayer(...)`, and `sdk.linkAccountPqc(...)` wrap these messages and broadcast them.
 - `utils` namespace: wallet derivation, mnemonic/address helpers, domain splitters, `coin` helpers, gasless detection.
 - `pqc` namespace: keystore, Dilithium key generation, sign-bytes helpers, constants, proto builders.
 - `LumenSDK`: opinionated shortcuts (register domain, create contract, publish release, etc.) that call `signAndBroadcast` for you.
@@ -138,7 +144,7 @@ npm run gen:proto    # buf generate --template buf.gen.ts.yaml
 
 You can exercise the SDK against a local Dockerized node:
 
-1. `npm run docker:node` (requires Docker, `jq`, `python3`, `curl`). This downloads the published `lumend` binary from [v1.4.1](https://github.com/network-lumen/blockchain/releases/tag/v1.4.1) (override via `LUMEN_RELEASE_URL`), packs it into a slim runtime image, initializes a single-node network under `artifacts/docker-node/`, and exposes RPC/REST/gRPC on `127.0.0.1:{27657,2327,9190}`. The validator mnemonic is stored in `artifacts/docker-node/validator.json`.
+1. `npm run docker:node` (requires Docker, `jq`, `python3`, `curl`). This downloads the published `lumend` binary from [v1.6.0](https://github.com/network-lumen/blockchain/releases/tag/v1.6.0) (override via `LUMEN_RELEASE_URL`), packs it into a slim runtime image, initializes a single-node network under `artifacts/docker-node/`, and exposes RPC/REST/gRPC on `127.0.0.1:{27657,2327,9190}`. The validator mnemonic is stored in `artifacts/docker-node/validator.json`.
    - `npm run test:docker` automates steps 1–3 below and shuts the container down afterward (use `KEEP_CONTAINER=1 npm run test:docker` if you want to keep it running). To test another release tag, set `LUMEN_RELEASE_URL=https://github.com/network-lumen/blockchain/releases/download/<tag>/linux-amd64-<tag>.tar.gz`.
 2. `npm run sdk:smoke` builds the SDK and executes `scripts/sdk_smoke.mjs`, which:
    - derives the validator signer from the mnemonic,
@@ -152,7 +158,7 @@ Override endpoints via `LUMEN_RPC`, `LUMEN_REST`, `LUMEN_GRPC`, and customize th
 
 #### Using a tagged chain release
 
-The script caches the archive under `artifacts/bin-cache/` and reuses it until you set `FORCE_LUMEN_DOWNLOAD=1`. By default we pin to `v1.4.1`; for future releases, set `LUMEN_RELEASE_URL` to the new asset (for example, `https://github.com/network-lumen/blockchain/releases/download/v1.4.1/linux-amd64-v1.4.1.tar.gz` for the current mainnet-ready build). Both `.zip` and `.tar.gz` archives are supported—set the env var to whichever format the release publishes and the helper will auto-detect it.
+The script caches the archive under `artifacts/bin-cache/` and reuses it until you set `FORCE_LUMEN_DOWNLOAD=1`. By default we pin to `v1.6.0`; for future releases, set `LUMEN_RELEASE_URL` to the new asset (for example, `https://github.com/network-lumen/blockchain/releases/download/v1.6.0/linux-amd64-v1.6.0.tar.gz` for the current mainnet-ready build). Both `.zip` and `.tar.gz` archives are supported—set the env var to whichever format the release publishes and the helper will auto-detect it.
 
 ### Future integrations
 

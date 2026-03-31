@@ -3,13 +3,11 @@ import type { EncodeObject } from "@cosmjs/proto-signing";
 import { BaseModule } from "./base.js";
 import { joinRest } from "../rest.js";
 import {
-  MsgMirrorRelease,
   MsgPublishRelease,
   MsgRejectRelease,
   MsgSetEmergency,
   MsgUpdateParams,
   MsgValidateRelease,
-  MsgYankRelease,
 } from "../types/lumen/release/v1/tx.js";
 import type { Release } from "../types/lumen/release/v1/types.js";
 import type { Params } from "../types/lumen/release/v1/params.js";
@@ -69,26 +67,6 @@ export class ReleasesModule extends BaseModule {
       value: MsgPublishRelease.fromPartial({ creator, release }),
     };
   }
-
-  msgMirrorRelease(creator: string, payload: { id: number; artifactIndex: number; newUrls: string[] }): EncodeObject {
-    return {
-      typeUrl: "/lumen.release.v1.MsgMirrorRelease",
-      value: MsgMirrorRelease.fromPartial({
-        creator,
-        id: payload.id,
-        artifactIndex: payload.artifactIndex,
-        newUrls: payload.newUrls,
-      }),
-    };
-  }
-
-  msgYankRelease(creator: string, id: number): EncodeObject {
-    return {
-      typeUrl: "/lumen.release.v1.MsgYankRelease",
-      value: MsgYankRelease.fromPartial({ creator, id }),
-    };
-  }
-
   msgSetEmergency(creator: string, payload: { id: number; emergencyOk: boolean; emergencyTtl?: number }): EncodeObject {
     return {
       typeUrl: "/lumen.release.v1.MsgSetEmergency",

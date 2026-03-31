@@ -3,7 +3,13 @@ import { fromBase64, fromHex } from "@cosmjs/encoding";
 
 import { BaseModule } from "./base.js";
 import { joinRest } from "../rest.js";
-import { MsgLinkAccountPQC } from "../types/lumen/pqc/v1/tx.js";
+import {
+  MsgAddIBCRelayer,
+  MsgLinkAccountPQC,
+  MsgRemoveIBCRelayer,
+  MsgUpdateParams,
+} from "../types/lumen/pqc/v1/tx.js";
+import type { Params } from "../types/lumen/pqc/v1/params.js";
 
 export class PqcModule extends BaseModule {
   constructor(restEndpoint?: string) {
@@ -17,6 +23,27 @@ export class PqcModule extends BaseModule {
 
   params() {
     return this.get("/params");
+  }
+
+  msgUpdateParams(authority: string, params: Params): EncodeObject {
+    return {
+      typeUrl: "/lumen.pqc.v1.MsgUpdateParams",
+      value: MsgUpdateParams.fromPartial({ authority, params }),
+    };
+  }
+
+  msgAddIbcRelayer(authority: string, relayer: string): EncodeObject {
+    return {
+      typeUrl: "/lumen.pqc.v1.MsgAddIBCRelayer",
+      value: MsgAddIBCRelayer.fromPartial({ authority, relayer }),
+    };
+  }
+
+  msgRemoveIbcRelayer(authority: string, relayer: string): EncodeObject {
+    return {
+      typeUrl: "/lumen.pqc.v1.MsgRemoveIBCRelayer",
+      value: MsgRemoveIBCRelayer.fromPartial({ authority, relayer }),
+    };
   }
 
   msgLinkAccountPqc(
