@@ -27,7 +27,7 @@ VALIDATOR_KEY_NAME="${VALIDATOR_KEY_NAME:-validator}"
 mkdir -p "$NODE_HOME"
 mkdir -p "$BIN_CACHE"
 
-DEFAULT_RELEASE_URL="https://github.com/network-lumen/blockchain/releases/download/v1.4.1/linux-amd64-v1.4.1.tar.gz"
+DEFAULT_RELEASE_URL="https://github.com/network-lumen/blockchain/releases/download/v1.6.0/linux-amd64-v1.6.0.tar.gz"
 RELEASE_URL="${LUMEN_RELEASE_URL:-$DEFAULT_RELEASE_URL}"
 ARCHIVE_NAME="$(basename "$RELEASE_URL")"
 
@@ -232,6 +232,7 @@ apply_genesis_overrides() {
   fi
   python3 <<PY
 import json
+import time
 from pathlib import Path
 
 genesis_path = Path(r"""$GENESIS_FILE""")
@@ -241,6 +242,8 @@ validator_addr = validator_info.get("address")
 data = json.loads(genesis_path.read_text())
 
 dns_params = data.get("app_state", {}).get("dns", {}).get("params", {})
+dns_params["grace_days"] = "0"
+dns_params["auction_days"] = "2"
 dns_params["update_rate_limit_seconds"] = "1"
 dns_params["update_pow_difficulty"] = 0
 dns_params["min_price_ulmn_per_month"] = "600000"
@@ -258,6 +261,57 @@ if validator_addr:
     if validator_addr not in allowed:
         allowed.append(validator_addr)
     release_params["allowed_publishers"] = allowed
+
+dns_state = data.get("app_state", {}).get("dns", {})
+if validator_addr and dns_state is not None:
+    now_ts = int(time.time())
+    active_index = "sdk-functional-auction.lmn"
+    settle_index = "sdk-functional-settle.lmn"
+    active_expire = now_ts - 30
+    settle_expire = now_ts - 2 * 86400 - 30
+
+    domain_map = dns_state.get("domain_map") or []
+    domain_map = [
+        entry for entry in domain_map
+        if entry.get("index") not in {active_index, settle_index}
+    ]
+    domain_map.extend([
+        {
+            "index": active_index,
+            "name": active_index,
+            "owner": validator_addr,
+            "records": [],
+            "expire_at": active_expire,
+            "creator": validator_addr,
+            "updated_at": active_expire,
+        },
+        {
+            "index": settle_index,
+            "name": settle_index,
+            "owner": validator_addr,
+            "records": [],
+            "expire_at": settle_expire,
+            "creator": validator_addr,
+            "updated_at": settle_expire,
+        },
+    ])
+    dns_state["domain_map"] = domain_map
+
+    auction_map = dns_state.get("auction_map") or []
+    auction_map = [
+        entry for entry in auction_map
+        if entry.get("index") != settle_index
+    ]
+    auction_map.append({
+        "index": settle_index,
+        "name": settle_index,
+        "start": settle_expire,
+        "end": settle_expire + 2 * 86400,
+        "highest_bid": "600000000",
+        "bidder": validator_addr,
+        "creator": validator_addr,
+    })
+    dns_state["auction_map"] = auction_map
 
 genesis_path.write_text(json.dumps(data, indent=2) + "\n")
 PY

@@ -19,13 +19,15 @@ async function main() {
 }
 
 async function runDnsFlow(env, sdk) {
-  const dnsParams = await env.client.dns().params().catch(() => ({}));
-  const graceDays = Number(dnsParams?.params?.graceDays ?? dnsParams?.params?.grace_days ?? 7);
-  const auctionDays = Number(dnsParams?.params?.auctionDays ?? dnsParams?.params?.auction_days ?? 7);
   const domain = `sdk${uniqueSuffix()}`;
   const ext = "lmn";
   const fqdn = `${domain}.${ext}`;
   const initialRecords = [{ key: "ip4", value: "1.2.3.4" }];
+  const seededAuctionDomain = "sdk-functional-auction";
+  const seededAuctionFqdn = `${seededAuctionDomain}.${ext}`;
+  const seededSettleDomain = "sdk-functional-settle";
+  const seededSettleFqdn = `${seededSettleDomain}.${ext}`;
+  const seededBidAmount = "600000000";
 
   await expectSuccess(
     sdk.registerDomain(env.validator.address, { domain, ext, records: initialRecords, durationDays: 30 }),
@@ -58,58 +60,54 @@ async function runDnsFlow(env, sdk) {
   const transferred = await env.client.dns().domain(fqdn);
   assert.ok(transferred?.domain?.owner === newOwner.address, "transferee does not own domain");
 
-  // Auction scenario
-  const auctionDomain = `auction${uniqueSuffix()}`;
-  const auctionFqdn = `${auctionDomain}.${ext}`;
-  const now = Math.floor(Date.now() / 1000);
-  const graceSeconds = graceDays * 24 * 3600;
-  const auctionSeconds = auctionDays * 24 * 3600;
-  const activeAuctionExpire = now - graceSeconds - Math.max(1, Math.floor(auctionSeconds / 2));
-  const expiredAuctionExpire = now - graceSeconds - auctionSeconds - 100;
+  // Auction scenario seeded in docker_localnet.sh for the 1.6.x public Msg surface.
+  const seededAuctionInfo = await env.client.dns().domain(seededAuctionFqdn);
+  assert.ok(seededAuctionInfo?.domain?.index === seededAuctionFqdn, "seeded auction domain missing");
 
   await expectSuccess(
-    env.client.signAndBroadcast(
-      env.validator.address,
-      [env.client.dns().msgCreateDomain(env.validator.address, {
-        index: auctionFqdn,
-        name: auctionFqdn,
-        owner: env.validator.address,
-        records: [],
-        expireAt: activeAuctionExpire,
-      })],
-      env.zeroFee,
-    ),
-    "dns create domain (auction seed)",
-  );
-
-  await expectSuccess(
-    sdk.bidOnDomain(env.validator.address, { domain: auctionDomain, ext, amount: "600000000" }),
+    sdk.bidOnDomain(env.validator.address, {
+      domain: seededAuctionDomain,
+      ext,
+      amount: seededBidAmount,
+    }),
     "dns bid on domain",
   );
 
   await sleep(500);
-  await expectSuccess(
-    env.client.signAndBroadcast(
-      env.validator.address,
-      [env.client.dns().msgUpdateDomain(env.validator.address, {
-        index: auctionFqdn,
-        name: auctionFqdn,
-        owner: env.validator.address,
-        records: [],
-        expireAt: expiredAuctionExpire,
-        powNonce: 0,
-      })],
-      env.zeroFee,
-    ),
-    "dns force expire domain for settlement",
+  const seededAuctionState = await env.client.dns().auction(seededAuctionFqdn);
+  assert.equal(
+    seededAuctionState?.auction?.highestBid ?? seededAuctionState?.auction?.highest_bid,
+    seededBidAmount,
+    "seeded auction bid amount mismatch",
+  );
+  assert.equal(
+    seededAuctionState?.auction?.bidder,
+    env.validator.address,
+    "seeded auction bidder mismatch",
   );
 
   await expectSuccess(
-    sdk.settleDomain(env.validator.address, { domain: auctionDomain, ext }),
+    sdk.settleDomain(env.validator.address, { domain: seededSettleDomain, ext }),
     "dns settle domain",
   );
 
-  return { fqdn, newOwner: newOwner.address };
+  const settled = await env.client.dns().domain(seededSettleFqdn);
+  assert.equal(settled?.domain?.owner, env.validator.address, "settled domain owner mismatch");
+
+  let settleAuctionRemoved = false;
+  try {
+    await env.client.dns().auction(seededSettleFqdn);
+  } catch {
+    settleAuctionRemoved = true;
+  }
+  assert.ok(settleAuctionRemoved, "settled auction should be removed");
+
+  return {
+    fqdn,
+    newOwner: newOwner.address,
+    seededAuctionFqdn,
+    seededSettleFqdn,
+  };
 }
 
 async function runGatewaysFlow(env, sdk) {
