@@ -5,6 +5,14 @@ import process from "node:process";
 import { LumenSDK, utils } from "../sdk/dist/index.js";
 import { setupTestEnv, expectSuccess, sleep, uniqueSuffix } from "./lib/test_env.mjs";
 
+function normalizeReleaseStatus(status) {
+  if (status === 0 || status === "PENDING") return "PENDING";
+  if (status === 1 || status === "VALIDATED") return "VALIDATED";
+  if (status === 2 || status === "REJECTED") return "REJECTED";
+  if (status === 3 || status === "EXPIRED") return "EXPIRED";
+  return String(status ?? "UNRECOGNIZED");
+}
+
 async function main() {
   const env = await setupTestEnv();
   const sdk = new LumenSDK(env.client);
@@ -237,8 +245,8 @@ async function runReleaseFlow(env) {
   const releaseId = published.id;
   assert.equal(published.publisher, env.validator.address, "release publisher mismatch");
   assert.equal(
-    published.status,
-    0,
+    normalizeReleaseStatus(published.status),
+    "PENDING",
     "published release should remain pending until authority validation",
   );
   assert.equal(published.yanked, false, "published release should not be yanked");
@@ -269,7 +277,7 @@ async function runReleaseFlow(env) {
     releaseId,
     version,
     channel: release.channel,
-    status: published.status,
+    status: normalizeReleaseStatus(published.status),
   };
 }
 
