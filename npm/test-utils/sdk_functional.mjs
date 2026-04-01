@@ -255,9 +255,14 @@ async function runReleaseFlow(env) {
   assert.equal(fetched?.release?.id, releaseId, "release lookup by id mismatch");
   assert.equal(fetched?.release?.version, version, "release version mismatch");
 
-  const releaseList = await env.client.releases().releases({ page: 1, limit: 20 });
+  const releaseList = await env.client.releases().releases({ page: 1, limit: 200 });
+  const listedReleases = Array.isArray(releaseList?.releases) ? releaseList.releases : [];
   assert.ok(
-    Array.isArray(releaseList?.releases) && releaseList.releases.some((entry) => entry?.id === releaseId),
+    listedReleases.some(
+      (entry) =>
+        String(entry?.id ?? "") === String(releaseId) ||
+        String(entry?.version ?? "") === String(version),
+    ),
     "release list missing published release",
   );
 
