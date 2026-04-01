@@ -235,37 +235,41 @@ async function runReleaseFlow(env) {
   const published = byVersion?.release;
   assert.ok(published?.id, "published release not found");
   const releaseId = published.id;
+  assert.equal(published.publisher, env.validator.address, "release publisher mismatch");
+  assert.equal(
+    published.status,
+    0,
+    "published release should remain pending until authority validation",
+  );
+  assert.equal(published.yanked, false, "published release should not be yanked");
 
-  await expectSuccess(
-    env.client.signAndBroadcast(
-      env.validator.address,
-      [env.client.releases().msgMirrorRelease(env.validator.address, {
-        id: releaseId,
-        artifactIndex: 0,
-        newUrls: ["https://mirror.example.com/artifact.tar.gz"],
-      })],
-      env.zeroFee,
-    ),
-    "release mirror",
+  const fetched = await env.client.releases().release(releaseId);
+  assert.equal(fetched?.release?.id, releaseId, "release lookup by id mismatch");
+  assert.equal(fetched?.release?.version, version, "release version mismatch");
+
+  const releaseList = await env.client.releases().releases({ page: 1, limit: 20 });
+  assert.ok(
+    Array.isArray(releaseList?.releases) && releaseList.releases.some((entry) => entry?.id === releaseId),
+    "release list missing published release",
   );
 
-  await expectSuccess(
-    env.client.signAndBroadcast(
-      env.validator.address,
-      [env.client.releases().msgYankRelease(env.validator.address, releaseId)],
-      env.zeroFee,
-    ),
-    "release yank",
-  );
-
-  const latest = await env.client.releases().release(releaseId);
-  assert.ok(latest?.release?.yanked, "release not yanked");
+  let latestPendingHidden = false;
+  try {
+    await env.client.releases().latestCanon({
+      channel: release.channel,
+      platform: release.artifacts[0].platform,
+      kind: release.artifacts[0].kind,
+    });
+  } catch (err) {
+    latestPendingHidden = String(err?.message || err).includes("404");
+  }
+  assert.ok(latestPendingHidden, "pending release should not appear in latest query");
 
   return {
     releaseId,
     version,
     channel: release.channel,
-    yanked: latest.release.yanked,
+    status: published.status,
   };
 }
 
