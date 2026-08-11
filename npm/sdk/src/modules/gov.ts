@@ -3,11 +3,11 @@ import Long from "long";
 
 import { BaseModule } from "./base.js";
 import { joinRest } from "../rest.js";
-import { MsgSubmitProposal, MsgDeposit, MsgVote, MsgVoteWeighted } from "cosmjs-types/cosmos/gov/v1/tx.js";
-import type { Coin } from "cosmjs-types/cosmos/base/v1beta1/coin.js";
-import type { Any } from "cosmjs-types/google/protobuf/any.js";
-import type { WeightedVoteOption } from "cosmjs-types/cosmos/gov/v1/gov.js";
-import { VoteOption } from "cosmjs-types/cosmos/gov/v1/gov.js";
+import { MsgSubmitProposal, MsgDeposit, MsgVote, MsgVoteWeighted } from "cosmjs-types/cosmos/gov/v1/tx";
+import type { Coin } from "cosmjs-types/cosmos/base/v1beta1/coin";
+import type { Any } from "cosmjs-types/google/protobuf/any";
+import type { WeightedVoteOption } from "cosmjs-types/cosmos/gov/v1/gov";
+import { VoteOption } from "cosmjs-types/cosmos/gov/v1/gov";
 
 type Pagination = { pageKey?: string; limit?: number };
 

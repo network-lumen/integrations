@@ -46,8 +46,8 @@ import {
   MsgDeposit,
   MsgExecLegacyContent,
   MsgUpdateParams as MsgGovUpdateParams,
-} from "cosmjs-types/cosmos/gov/v1/tx.js";
-import { MsgSoftwareUpgrade } from "cosmjs-types/cosmos/upgrade/v1beta1/tx.js";
+} from "cosmjs-types/cosmos/gov/v1/tx";
+import { MsgSoftwareUpgrade } from "cosmjs-types/cosmos/upgrade/v1beta1/tx";
 
 const customTypes: Array<[string, GeneratedType]> = [
   ["/lumen.dns.v1.MsgUpdateParams", MsgDnsUpdateParams as unknown as GeneratedType],

@@ -1,6 +1,6 @@
 import type { Coin } from "@cosmjs/amino";
 import type { EncodeObject } from "@cosmjs/proto-signing";
-import { MsgSend } from "cosmjs-types/cosmos/bank/v1beta1/tx.js";
+import { MsgSend } from "cosmjs-types/cosmos/bank/v1beta1/tx";
 
 export function bankSend(from: string, to: string, amount: readonly Coin[]): EncodeObject {
   return {

@@ -10,7 +10,7 @@ import { LumenSDK } from "../src/sdk.js";
 import { joinRest, withQuery } from "../src/rest.js";
 import type { Release } from "../src/types/lumen/release/v1/types.js";
 import { Release_ReleaseStatus } from "../src/types/lumen/release/v1/types.js";
-import { VoteOption } from "cosmjs-types/cosmos/gov/v1/gov.js";
+import { VoteOption } from "cosmjs-types/cosmos/gov/v1/gov";
 
 const REST = "http://localhost:2327";
 

@@ -1,5 +1,5 @@
-import { SignDoc, TxBody, TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx.js";
-import { Any } from "cosmjs-types/google/protobuf/any.js";
+import { SignDoc, TxBody, TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx";
+import { Any } from "cosmjs-types/google/protobuf/any";
 
 import { PQC_PREFIX, PQC_TYPE_URL } from "./constants.js";
 import { PQCSignatureEntry, PQCSignatures } from "../types/lumen/pqc/v1/pqc.js";

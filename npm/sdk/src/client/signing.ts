@@ -3,7 +3,7 @@ import { makeSignDoc } from "@cosmjs/proto-signing";
 import { fromBase64 } from "@cosmjs/encoding";
 import { calculateFee, GasPrice, type DeliverTxResponse, SigningStargateClient, type SigningStargateClientOptions } from "@cosmjs/stargate";
 import type { StdFee } from "@cosmjs/amino";
-import { TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx.js";
+import { TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx";
 
 import { LUMEN, type LumenEndpoints } from "../constants.js";
 import { createRegistry } from "../registry.js";
@@ -61,7 +61,11 @@ export class LumenSigningClient extends LumenClient {
     super(chainId, endpoints);
     this.signer = signer;
     this.registry = registry;
-    this.gasPrice = options.gasPrice;
+    if (options.gasPrice && "amount" in options.gasPrice) {
+      this.gasPrice = options.gasPrice;
+    } else {
+      this.gasPrice = undefined;
+    }
     this.gasMultiplier = options.gasMultiplier ?? 1.3;
     this.pqcConfig = {
       enabled: options.pqc?.enabled ?? true,
@@ -166,7 +170,8 @@ export class LumenSigningClient extends LumenClient {
       throw new Error(`Chain requires minimum scheme ${params.minScheme}, local config uses ${scheme}`);
     }
 
-    const { accountNumber } = await this.ensureSigning().getSequence(signerAddress);
+    const seq = await this.ensureSigning().getSequence(signerAddress);
+    const accountNumber = Number(seq.accountNumber);
     const signBytes = computeSignBytes(this.chainId, accountNumber, txRaw);
     const signature = await pqcSign(signBytes, key.privateKey);
     return [{

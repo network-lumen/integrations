@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { Any } from "cosmjs-types/google/protobuf/any.js";
-import { TxBody } from "cosmjs-types/cosmos/tx/v1beta1/tx.js";
+import { Any } from "cosmjs-types/google/protobuf/any";
+import { TxBody } from "cosmjs-types/cosmos/tx/v1beta1/tx";
 
 import { PQC_TYPE_URL } from "../src/pqc/constants.js";
 import { sanitizeBodyBytes, withPqcExtension } from "../src/pqc/tx.js";
